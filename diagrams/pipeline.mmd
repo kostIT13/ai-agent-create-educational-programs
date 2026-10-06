@@ -1,0 +1,31 @@
+%% ============================================================
+%% Диаграмма 2: Мультиагентный пайплайн (LangGraph)
+%% interrupt = human-in-the-loop чекпоинты
+%% Send API = параллельная генерация по модулям
+%% ============================================================
+flowchart TD
+    S([Start]) --> INT[Intake<br/>разбор брифа, уточняющие вопросы]
+    INT --> REF[Reference Analyst<br/>Docling → Qdrant, извлечение требований]
+    REF --> COMP[Competency Architect<br/>компетенции + результаты обучения]
+
+    COMP -->|interrupt 1| H1{Методист правит<br/>карту компетенций?}
+    H1 -->|правки| COMP
+    H1 -->|принято| CURR[Curriculum Architect<br/>модули, часы, пререквизиты]
+
+    CURR -->|interrupt 2| H2{Методист правит<br/>структуру?}
+    H2 -->|правки| CURR
+    H2 -->|принято| SP[Send API: параллельно по модулям]
+
+    SP --> AS[Assessment Designer<br/>тесты: MCQ / T-F / matching / open]
+    SP --> SM[Seminar Designer<br/>задачи, кейсы, рубрики, эталоны]
+    SP --> LC[Lecture Planner<br/>тайминг, тезисы, примеры, заметки]
+
+    AS --> VIS[Visual Agent<br/>слайды PPTX + Mermaid схемы]
+    SM --> VIS
+    LC --> VIS
+
+    VIS --> CR[Critic / QA<br/>валидаторы + LLM-judge + fact-check]
+    CR -->|замечания| DEC{Есть критические<br/>замечания?}
+    DEC -->|да, ≤ 2 итерации| SP
+    DEC -->|нет| PKG[Packager<br/>ZIP: PPTX, DOCX, Moodle XML, JSON]
+    PKG --> E([End])

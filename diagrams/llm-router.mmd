@@ -1,0 +1,23 @@
+%% ============================================================
+%% Диаграмма 6: LLM-роутер (LiteLLM) — иерархия моделей и fallback
+%% ============================================================
+flowchart TD
+    AG[Агент] --> T{Тип задачи}
+
+    T -->|Архитектура, компетенции, Critic| M1[Сильная модель<br/>Claude Sonnet 4.x / GPT-4o-class]
+    T -->|Лекции, семинары, вопросы| M2[Дешёвая модель<br/>Claude Haiku / GPT-4o-mini / Qwen2.5]
+    T -->|Эмбеддинги| M3[bge-m3 локально<br/>+ sparse fastembed]
+    T -->|Фактчек, сложная логика| M4[Reasoning<br/>o1 / o3-class]
+
+    M1 --> F1{Успех?}
+    M1 --> F2{Rate limit?}
+    F1 -->|нет| FB[Fallback: OpenRouter → локальная Ollama]
+    F2 -->|429| W[Backoff + ретраи<br/>Tenacity, семафор concurrency]
+    FB --> OK
+    F1 -->|да| OK
+
+    M2 --> F3{Успех?}
+    F3 -->|нет| FB
+    F3 -->|да| OK
+
+    OK[Ответ + usage tokens → Langfuse<br/>учёт стоимости в usage_log]

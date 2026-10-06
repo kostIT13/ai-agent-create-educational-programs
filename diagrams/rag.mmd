@@ -1,0 +1,30 @@
+%% ============================================================
+%% Диаграмма 3: RAG-контур
+%% ============================================================
+flowchart LR
+    subgraph INGEST["Ingest"]
+        F1[PDF] --> DOC[Docling: структура документа]
+        F2[DOCX] --> DOC
+        F3[PPTX] --> DOC
+        F4[URL] --> DOC
+        DOC --> CH[Чанкинг по структуре<br/>секции, таблицы, листы]
+        CH --> EMB[bge-m3<br/>dense + sparse эмбеддинги]
+        EMB --> QD[("Qdrant<br/>collection: course_{id}_refs")]
+    end
+
+    subgraph QUERY["Query"]
+        Q[Запрос агента<br/>+ фильтр по модулю/теме] --> HYB[Hybrid search<br/>dense + sparse, RRF]
+        HYB --> R1[top-30 кандидатов]
+        R1 --> RE[bge-reranker-v2-m3]
+        RE --> R2[top-6 чанков]
+        R2 --> CTX[Контекст в промпте<br/>в тегах source]
+        CTX --> AG[Агент]
+        AG --> REFS[source_refs<br/>ссылки на id чанков]
+    end
+
+    subgraph VERIFY["Verify"]
+        REFS --> CR[Critic: утверждения следуют<br/>из указанных чанков]
+        CR --> FAITH[RAGAS groundedness<br/>+ LLM-judge]
+    end
+
+    QD -.->|payload: text + metadata| CTX

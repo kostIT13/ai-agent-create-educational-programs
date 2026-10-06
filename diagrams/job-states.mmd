@@ -1,0 +1,16 @@
+%% ============================================================
+%% Диаграмма 7: State machine джоба (курс)
+%% ============================================================
+stateDiagram-v2
+    [*] --> draft: создан из брифа
+    draft --> running: запуск пайплайна
+    running --> waiting_input: interrupt (компетенции/структура)
+    waiting_input --> running: ответ методиста / resume
+    running --> running: перегенерация проблемных узлов (Critic)
+    running --> ready: Packager завершил
+    ready --> running: правки / chat / regenerate
+    ready --> ready: экспорт, версии
+    running --> failed: ошибка / превышен лимит стоимости
+    failed --> running: retry (идемпотентный шаг)
+    ready --> [*]
+    failed --> [*]

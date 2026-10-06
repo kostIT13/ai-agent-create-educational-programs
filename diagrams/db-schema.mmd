@@ -1,0 +1,88 @@
+%% ============================================================
+%% Диаграмма 4: Схема БД (PostgreSQL)
+%% Чанки референсов хранятся в Qdrant, в Postgres — метаданные
+%% ============================================================
+erDiagram
+    users ||--o{ courses : "создаёт"
+    courses ||--o{ course_versions : "имеет версии"
+    courses ||--o{ jobs : "запускает джобы"
+    courses ||--o{ references : "загружает"
+    courses ||--o{ feedback : "собирает отзывы"
+    courses ||--o{ usage_log : "учитывает расход"
+
+    users {
+        uuid id PK
+        text email UK
+        text role "admin | methodist"
+        timestamp created_at
+    }
+
+    courses {
+        uuid id PK
+        uuid created_by FK
+        text title
+        jsonb brief_json "входной бриф"
+        text status "draft | running | waiting_input | ready | failed"
+        int version
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    course_versions {
+        uuid id PK
+        uuid course_id FK
+        int version
+        jsonb graph_json "полный граф курса"
+        text diff_summary
+        timestamp created_at
+    }
+
+    jobs {
+        uuid id PK
+        uuid course_id FK
+        text status "pending | running | waiting_interrupt | done | failed"
+        numeric progress "0..1"
+        text error
+        timestamp started_at
+        timestamp finished_at
+    }
+
+    events {
+        uuid id PK
+        uuid job_id FK
+        text node "имя агента"
+        text status "started | finished | error"
+        jsonb payload "частичные артефакты, token_usage"
+        timestamp ts
+    }
+
+    references {
+        uuid id PK
+        uuid course_id FK
+        text name
+        text mime
+        text s3_key
+        text qdrant_collection "course_{id}_refs"
+        timestamp uploaded_at
+    }
+
+    feedback {
+        uuid id PK
+        uuid course_id FK
+        text entity_id "Q41 / S2 / L2..."
+        int rating "1..5"
+        text comment
+        uuid created_by FK
+        timestamp created_at
+    }
+
+    usage_log {
+        uuid id PK
+        uuid course_id FK
+        uuid job_id FK
+        text model
+        int tokens_in
+        int tokens_out
+        numeric cost_usd
+        timestamp ts
+    }

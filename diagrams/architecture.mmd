@@ -1,0 +1,40 @@
+%% ============================================================
+%% ИИ-агент для создания образовательных программ
+%% Диаграмма 1: High-level архитектура
+%% ============================================================
+flowchart LR
+    U[Пользователь / Методист] -->|бриф, референсы| FE
+
+    subgraph FE["Frontend (Vite + React + TS)"]
+        BF[Форма брифа + drag&drop]
+        RG[React Flow: живой граф агентов]
+        HM[Heatmap покрытия компетенций]
+        ED[Редактор курса + трассировка]
+    end
+
+    FE -->|REST| API
+    FE <-->|"SSE: поток событий пайплайна"| API
+
+    subgraph BE["Backend (FastAPI)"]
+        API[Routers + Auth]
+        BG[BackgroundTasks]
+        WS[LangGraph Workflow]
+    end
+
+    BG --> WS
+    WS --> AG["Агенты: Intake / RefAnalyst / Competency / Curriculum / Assessment / Seminar / Lecture / Visual / Critic / Packager"]
+
+    AG --> LLM["LLM Router (LiteLLM)"]
+    LLM --> P1[OpenAI GPT]
+    LLM --> P2[Anthropic Claude]
+    LLM --> P3[OpenRouter]
+    LLM --> P4[Локальная: Ollama Qwen]
+
+    AG --> PG[(PostgreSQL<br/>граф курса, версии, джобы)]
+    AG --> QD[(Qdrant<br/>чанки референсов, hybrid)]
+    AG --> RD[(Redis<br/>кэш, прогресс, rate limit)]
+    AG --> LF[Langfuse<br/>трейсы, evals, стоимость]
+
+    WS --> EXP[Экспортеры: PPTX / DOCX / Moodle XML / Mermaid]
+    EXP --> ZIP[ZIP-пакет курса]
+    ZIP --> U
