@@ -1,8 +1,8 @@
-"""initial schema
+"""add tables
 
-Revision ID: a4342e7d8c24
+Revision ID: 28779e89a258
 Revises: 
-Create Date: 2026-10-10 13:59:44.182405
+Create Date: 2026-10-10 18:32:16.296296
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'a4342e7d8c24'
+revision: str = '28779e89a258'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('role', sa.Enum('ADMIN', 'METHODIST', 'VIEWER', name='user_role'), server_default='viewer', nullable=False),
+    sa.Column('role', sa.Enum('admin', 'methodist', 'viewer', name='user_role'), server_default='viewer', nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -33,7 +33,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('title', sa.String(length=512), nullable=False),
     sa.Column('brief_json', postgresql.JSONB(astext_type=sa.Text()), server_default='{}', nullable=False),
-    sa.Column('status', sa.Enum('DRAFT', 'PROCESSING', 'READY', 'FAILED', 'ARCHIVED', name='course_status'), server_default='draft', nullable=False),
+    sa.Column('status', sa.Enum('draft', 'processing', 'ready', 'failed', 'archived', name='course_status'), server_default='draft', nullable=False),
     sa.Column('created_by', sa.Uuid(), nullable=True),
     sa.Column('version', sa.Integer(), server_default='1', nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -72,7 +72,7 @@ def upgrade() -> None:
     op.create_table('jobs',
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('course_id', sa.Uuid(), nullable=False),
-    sa.Column('status', sa.Enum('QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED', name='job_status'), server_default='queued', nullable=False),
+    sa.Column('status', sa.Enum('queued', 'running', 'completed', 'failed', 'cancelled', name='job_status'), server_default='queued', nullable=False),
     sa.Column('progress', sa.SmallInteger(), server_default='0', nullable=False),
     sa.Column('error', sa.Text(), nullable=True),
     sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
@@ -111,7 +111,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('job_id', sa.Uuid(), nullable=False),
     sa.Column('node', sa.String(length=128), nullable=False),
-    sa.Column('status', sa.Enum('STARTED', 'RUNNING', 'COMPLETED', 'FAILED', 'INTERRUPTED', name='event_status'), server_default='started', nullable=False),
+    sa.Column('status', sa.Enum('started', 'running', 'completed', 'failed', 'interrupted', name='event_status'), server_default='started', nullable=False),
     sa.Column('payload_json', postgresql.JSONB(astext_type=sa.Text()), server_default='{}', nullable=False),
     sa.Column('ts', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['job_id'], ['jobs.id'], ondelete='CASCADE'),
@@ -144,4 +144,7 @@ def downgrade() -> None:
     op.drop_table('courses')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
+    # Enum-типы создаются неявно при create_table, поэтому удаляем их явно:
+    for enum_name in ('user_role', 'course_status', 'job_status', 'event_status'):
+        op.execute(f'DROP TYPE {enum_name}')
     # ### end Alembic commands ###
