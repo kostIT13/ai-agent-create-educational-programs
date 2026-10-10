@@ -1,10 +1,8 @@
 import enum
 import uuid
 from datetime import datetime
-
 from sqlalchemy import DateTime, Enum, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from database.db_connect.base import Base
 
 
