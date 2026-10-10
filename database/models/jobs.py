@@ -31,7 +31,11 @@ class Job(Base):
         ForeignKey("courses.id", ondelete="CASCADE"),
     )
     status: Mapped[JobStatus] = mapped_column(
-        Enum(JobStatus, name="job_status"),
+        Enum(
+            JobStatus,
+            name="job_status",
+            values_callable=lambda e: [m.value for m in e],  # храним значения, а не имена
+        ),
         default=JobStatus.QUEUED,
         server_default=JobStatus.QUEUED.value,
     )

@@ -25,7 +25,11 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role"),
+        Enum(
+            UserRole,
+            name="user_role",
+            values_callable=lambda e: [m.value for m in e],  # храним значения, а не имена
+        ),
         default=UserRole.VIEWER,
         server_default=UserRole.VIEWER.value,
     )

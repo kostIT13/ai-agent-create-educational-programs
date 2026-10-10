@@ -35,7 +35,11 @@ class Event(Base):
     )
     node: Mapped[str] = mapped_column(String(128)) 
     status: Mapped[EventStatus] = mapped_column(
-        Enum(EventStatus, name="event_status"),
+        Enum(
+            EventStatus,
+            name="event_status",
+            values_callable=lambda e: [m.value for m in e],  # храним значения, а не имена
+        ),
         default=EventStatus.STARTED,
         server_default=EventStatus.STARTED.value,
     )

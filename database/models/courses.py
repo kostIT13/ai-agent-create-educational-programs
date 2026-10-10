@@ -31,7 +31,11 @@ class Course(Base):
     title: Mapped[str] = mapped_column(String(512))
     brief_json: Mapped[dict] = mapped_column(JSONB, default=dict, server_default="{}")
     status: Mapped[CourseStatus] = mapped_column(
-        Enum(CourseStatus, name="course_status"),
+        Enum(
+            CourseStatus,
+            name="course_status",
+            values_callable=lambda e: [m.value for m in e],  # храним значения, а не имена
+        ),
         default=CourseStatus.DRAFT,
         server_default=CourseStatus.DRAFT.value,
     )
