@@ -1,7 +1,8 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+import os
+
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
@@ -16,14 +17,19 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+from database.db_connect.base import Base  # noqa: E402
+import database.models  # noqa: F401, E402  -- регистрирует все таблицы в Base.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+target_metadata = Base.metadata
+
+# URL для миграций берём из переменных окружения (.env / docker-compose).
+# Alembic работает синхронно, поэтому asyncpg -> psycopg (3).
+POSTGRES_URL = os.getenv(
+    "POSTGRES_URL",
+    "postgresql+asyncpg://User:Pass@localhost:5432/postgres",
+)
+SYNC_DATABASE_URL = POSTGRES_URL.replace("+asyncpg", "+psycopg")
+config.set_main_option("sqlalchemy.url", SYNC_DATABASE_URL)
 
 
 def run_migrations_offline() -> None:
@@ -43,6 +49,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        compare_type=True,
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -65,7 +72,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
         )
 
         with context.begin_transaction():
