@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Git / VCS
+.git/
+.gitignore
+.gitattributes
+.git/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Alembic state (миграции нужны в образе, кэш — нет)
+alembic/versions/__pycache__/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation / misc
+diagrams/
+workflows/
+*.md
+!README.md
