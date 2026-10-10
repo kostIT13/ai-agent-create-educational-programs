@@ -1,8 +1,5 @@
-"""Pydantic-схемы для эндпоинтов версий курса."""
-
 import uuid
 from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict
 
 

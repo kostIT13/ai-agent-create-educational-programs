@@ -1,23 +1,12 @@
-"""Эндпоинты версий курса + зависимость-инъекция сервиса."""
-
 import uuid
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.course_versions.schemas import CourseVersionCreate, CourseVersionRead
 from services.course_versions.service import CourseVersionService
+from app.api.course_versions.dependencies import CourseVersionServiceDependency
 
-
-async def get_course_version_service(session: AsyncSession = Depends(get_db)):
-    return CourseVersionService(session)
-
-
-CourseVersionServiceDependency = Annotated[
-    CourseVersionService, Depends(get_course_version_service)
-]
 
 router = APIRouter(prefix="/course-versions", tags=["course-versions"])
 
