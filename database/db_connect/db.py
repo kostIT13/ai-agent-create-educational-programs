@@ -6,7 +6,7 @@ from core.configs.db_config import db_settings
 
 engine = create_async_engine(
     db_settings.POSTGRES_URL,
-    echo=db_settings.DEBUG,
+    echo=db_settings.DEBUG.lower() == "debug",
     pool_pre_ping=True,
     connect_args={
         "statement_cache_size": 0,
