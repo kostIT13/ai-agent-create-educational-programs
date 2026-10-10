@@ -1,8 +1,3 @@
-"""SQLAlchemy-модели таблиц (plan.md §7.2).
-
-Импорт всех моделей здесь нужен для автогенерации миграций Alembic.
-"""
-
 from database.models.users import User, UserRole
 from database.models.courses import Course, CourseStatus
 from database.models.course_versions import CourseVersion
