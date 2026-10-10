@@ -73,9 +73,13 @@ class CourseService:
         logger.info("Статус курса {}: {} -> {}", course_id, course.status, new_status)
         return course
 
-    async def update_brief(self, course_id: uuid.UUID, brief_json: dict) -> Course:
+    async def update_fields(self, course_id: uuid.UUID, **fields) -> Course:
+        """Обновить произвольные поля курса (title, brief_json)."""
         course = await self.get_or_raise(course_id)
-        return await self.repo.update(course, brief_json=brief_json)
+        return await self.repo.update(course, **fields)
+
+    async def update_brief(self, course_id: uuid.UUID, brief_json: dict) -> Course:
+        return await self.update_fields(course_id, brief_json=brief_json)
 
     async def archive(self, course_id: uuid.UUID) -> Course:
         return await self.change_status(course_id, CourseStatus.ARCHIVED)

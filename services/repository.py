@@ -56,6 +56,13 @@ class SQLAlchemyRepository(AbstractRepository[ModelT], Generic[ModelT]):
         await self.session.refresh(obj)
         return obj
 
+    async def update_by_id(self, id_: uuid.UUID, **data: Any) -> Base | None:
+        """Обновить запись по id; None, если записи нет."""
+        obj = await self.get(id_)
+        if obj is None:
+            return None
+        return await self.update(obj, **data)
+
     async def delete(self, obj: Base) -> None:
         await self.session.delete(obj)
         await self.session.flush()
