@@ -8,6 +8,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
     LOG_LEVEL: str = "INFO"
+    DEBUG: str = "release"
 
     POSTGRES_URL: str
     POSTGRES_DB: str
