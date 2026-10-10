@@ -9,14 +9,13 @@ from database.db_connect.base import Base
 
 
 class UserRole(str, enum.Enum):
-    """Роль пользователя (простой RBAC)."""
-
     ADMIN = "admin"
     METHODIST = "methodist"
     VIEWER = "viewer"
 
 
 class User(Base):
+
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -34,8 +33,7 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    # -- relationships ------------------------------------------------------
     courses = relationship("Course", back_populates="creator")
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r} role={self.role}>"
