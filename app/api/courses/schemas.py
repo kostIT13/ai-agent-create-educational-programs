@@ -1,10 +1,6 @@
-"""Pydantic-схемы для эндпоинтов курсов."""
-
 import uuid
 from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict, Field
-
 from database.models.courses import CourseStatus
 
 

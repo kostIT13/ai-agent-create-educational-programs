@@ -1,10 +1,6 @@
-"""Pydantic-схемы для эндпоинтов отзывов."""
-
 import uuid
 from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict, Field
-
 from database.models.feedback import Feedback
 
 

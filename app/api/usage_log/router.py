@@ -1,27 +1,17 @@
-"""Эндпоинты лога использования LLM + зависимость-инъекция сервиса."""
-
 import uuid
 from datetime import datetime
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.usage_log.schemas import (
     UsageByModelRow,
     UsageLogCreate,
     UsageLogRead,
     UsageTotals,
 )
-from services.usage_log.service import UsageLogService
+from app.api.usage_log.dependencies import UsageLogServiceDependency
 
-
-async def get_usage_log_service(session: AsyncSession = Depends(get_db)):
-    return UsageLogService(session)
-
-
-UsageLogServiceDependency = Annotated[UsageLogService, Depends(get_usage_log_service)]
 
 router = APIRouter(prefix="/usage-log", tags=["usage-log"])
 

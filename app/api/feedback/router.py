@@ -1,26 +1,16 @@
-"""Эндпоинты отзывов + зависимость-инъекция сервиса."""
-
 import uuid
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.feedback.schemas import (
     FeedbackCreate,
     FeedbackRead,
     FeedbackStats,
     FeedbackStatsRow,
 )
-from services.feedback.service import FeedbackService
+from app.api.feedback.dependencies import FeedbackServiceDependency
 
-
-async def get_feedback_service(session: AsyncSession = Depends(get_db)):
-    return FeedbackService(session)
-
-
-FeedbackServiceDependency = Annotated[FeedbackService, Depends(get_feedback_service)]
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 

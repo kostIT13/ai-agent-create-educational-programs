@@ -1,10 +1,6 @@
-"""Pydantic-схемы для эндпоинтов пользователей."""
-
 import uuid
 from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-
 from database.models.users import UserRole
 
 

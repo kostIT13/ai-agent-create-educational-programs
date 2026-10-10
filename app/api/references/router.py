@@ -1,21 +1,11 @@
-"""Эндпоинты справочников + зависимость-инъекция сервиса."""
-
 import uuid
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.references.schemas import ReferenceCreate, ReferenceRead
-from services.references.service import ReferenceService
+from app.api.references.dependencies import ReferenceServiceDependency
 
-
-async def get_reference_service(session: AsyncSession = Depends(get_db)):
-    return ReferenceService(session)
-
-
-ReferenceServiceDependency = Annotated[ReferenceService, Depends(get_reference_service)]
 
 router = APIRouter(prefix="/references", tags=["references"])
 

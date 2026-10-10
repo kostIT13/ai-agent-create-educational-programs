@@ -1,22 +1,13 @@
-"""Эндпоинты событий + зависимость-инъекция сервиса."""
-
 import uuid
 from datetime import datetime
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.events.schemas import EventCreate, EventRead
 from services.events.service import EventService
+from app.api.events.dependencies import EventServiceDependency
 
-
-async def get_event_service(session: AsyncSession = Depends(get_db)):
-    return EventService(session)
-
-
-EventServiceDependency = Annotated[EventService, Depends(get_event_service)]
 
 router = APIRouter(prefix="/events", tags=["events"])
 

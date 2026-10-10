@@ -1,13 +1,9 @@
-"""Эндпоинты курсов + зависимость-инъекция сервиса."""
-
 import uuid
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from database.models.courses import Course, CourseStatus
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.courses.schemas import (
     CourseCreate,
     CourseListRead,
@@ -15,14 +11,8 @@ from app.api.courses.schemas import (
     CourseStatusUpdate,
     CourseUpdate,
 )
-from services.courses.service import CourseService
+from app.api.courses.dependencies import CourseServiceDependency
 
-
-async def get_course_service(session: AsyncSession = Depends(get_db)):
-    return CourseService(session)
-
-
-CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 

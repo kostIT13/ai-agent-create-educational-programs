@@ -1,9 +1,6 @@
-"""Pydantic-схемы для эндпоинтов лога использования LLM."""
-
 import uuid
 from datetime import datetime
 from decimal import Decimal
-
 from pydantic import BaseModel, ConfigDict
 
 

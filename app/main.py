@@ -13,9 +13,6 @@ from app.api import (
 
 app = FastAPI(title="TS Hack API", version="0.1.0")
 
-# KeyError из сервисного слоя -> 404, ValueError -> 409/400 обрабатываются локально,
-# поэтому тут только глобальный catch-all для непредвиденных ситуаций.
-
 
 @app.get("/health", tags=["health"])
 async def health() -> dict[str, str]:

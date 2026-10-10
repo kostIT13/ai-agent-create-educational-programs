@@ -1,21 +1,11 @@
-"""Эндпоинты пользователей + зависимость-инъекция сервиса."""
-
 import uuid
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.users.schemas import UserCreate, UserListRead, UserParams, UserRead, UserUpdate
-from services.users.service import UserService
-
-
-async def get_user_service(session: AsyncSession = Depends(get_db)):
-    return UserService(session)
-
-
-UserServiceDependency = Annotated[UserService, Depends(get_user_service)]
+from app.api.users.dependencies import UserServiceDependency
 
 router = APIRouter(prefix="/users", tags=["users"])
 

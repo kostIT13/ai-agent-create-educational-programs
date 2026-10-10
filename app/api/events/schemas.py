@@ -1,10 +1,6 @@
-"""Pydantic-схемы для эндпоинтов событий."""
-
 import uuid
 from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict
-
 from database.models.events import EventStatus
 
 

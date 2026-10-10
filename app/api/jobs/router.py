@@ -1,22 +1,12 @@
-"""Эндпоинты джобов + зависимость-инъекция сервиса."""
-
 import uuid
 from typing import Annotated
-
 from database.db_connect.db import get_db
 from database.models.jobs import JobStatus
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.jobs.schemas import JobCreate, JobFail, JobProgressUpdate, JobRead
-from services.jobs.service import JobService
+from app.api.jobs.dependencies import JobServiceDependency
 
-
-async def get_job_service(session: AsyncSession = Depends(get_db)):
-    return JobService(session)
-
-
-JobServiceDependency = Annotated[JobService, Depends(get_job_service)]
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
