@@ -20,7 +20,7 @@ flowchart LR
         RE --> R2[top-6 чанков]
         R2 --> CTX[Контекст в промпте<br/>в тегах source]
         CTX --> AG[Агент]
-        AG --> REFS[source_refs<br/>course_{id}_refs:{chunk_id}]
+        AG --> REFS["source_refs<br/>course_{id}_refs:{chunk_id}"]
     end
 
     subgraph VERIFY["Verify (Critic)"]

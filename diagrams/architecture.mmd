@@ -28,7 +28,7 @@ flowchart LR
     SVC --> BG
     BG --> WS
     WS --> AG["Агенты (agent/):<br/>Intake / Competency / Curriculum /<br/>Assessment / Seminar / Lecture / Visual / Critic"]
-    AG --> VAL[Валидаторы (validators/)<br/>детерминированные проверки]
+    AG --> VAL["Валидаторы (validators/)<br/>детерминированные проверки"]
 
     AG --> LLM["LLMClient (llm/)<br/>structured output + fallback"]
     LLM --> P1[OpenAI GPT]

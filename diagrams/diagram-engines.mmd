@@ -9,7 +9,7 @@ flowchart LR
     E -->|"Архитектурные схемы,<br/>сложные связи"| D2[D2<br/>опция, когда Mermaid даёт «спагетти»]
     E -->|"Граф пререквизитов (DAG)"| GV[Graphviz dot<br/>раскладка DAG вне конкуренции]
 
-    MM --> CACHE[Кэш рендеров<br/>hash(код диаграммы) → PNG в S3/MinIO]
+    MM --> CACHE["Кэш рендеров<br/>hash(код диаграммы) → PNG в S3/MinIO"]
     D2 --> CACHE
     GV --> CACHE
     CACHE --> EXP[PPTX / SVG / PNG]
