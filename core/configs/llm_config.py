@@ -9,8 +9,8 @@ class LLMSettings(BaseSettings):
         extra="ignore",
     )
     API_KEY: str = ""
-    BASE_URL: str
-    MODEL: str
+    BASE_URL: str = "https://api.openai.com/v1"
+    MODEL: str = "gpt-4o-mini"
     FALLBACK_MODEL: str = ""
     TEMPERATURE: float = 0.2
     MAX_TOKENS: int = 4096

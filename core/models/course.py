@@ -58,6 +58,7 @@ class CourseState(TypedDict, total=False):
     """
 
     brief: Brief
+    raw_brief: str | None
     competencies: list[Competency]
     outcomes: list[Outcome]
     modules: list[Module]
