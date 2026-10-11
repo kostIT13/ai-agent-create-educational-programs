@@ -1,18 +1,24 @@
 %% ============================================================
 %% Диаграмма 2: Мультиагентный пайплайн (LangGraph)
-%% interrupt = human-in-the-loop чекпоинты
-%% Send API = параллельная генерация по модулям
+%% Сделано: intake → competency → curriculum → validate (линейный)
+%% План: + Reference Analyst, Send API, Critic-цикл, чекпоинты
 %% ============================================================
 flowchart TD
-    S([Start]) --> INT[Intake<br/>разбор брифа, уточняющие вопросы]
-    INT --> REF[Reference Analyst<br/>Docling → Qdrant, извлечение требований]
-    REF --> COMP[Competency Architect<br/>компетенции + результаты обучения]
+    S([Start]) --> INT[Intake<br/>разбор брифа → Brief]
 
-    COMP -->|interrupt 1| H1{Методист правит<br/>карту компетенций?}
+    subgraph DONE["Сделано (Этап 2) — линейный граф"]
+        INT --> COMP[Competency Architect<br/>компетенции + результаты обучения]
+        COMP --> CURR[Curriculum Architect<br/>модули, часы, пререквизиты]
+        CURR --> VAL[Validate<br/>детерминированные проверки]
+        VAL -->|ошибки| ERR[errors в state → PipelineError]
+        VAL -->|ok| NEXT
+    end
+
+    NEXT[Дальше по плану] --> REF[Reference Analyst<br/>Docling → Qdrant, извлечение требований]
+
+    REF --> H1{interrupt 1:<br/>методист правит компетенции?}
     H1 -->|правки| COMP
-    H1 -->|принято| CURR[Curriculum Architect<br/>модули, часы, пререквизиты]
-
-    CURR -->|interrupt 2| H2{Методист правит<br/>структуру?}
+    H1 -->|принято| H2{interrupt 2:<br/>методист правит структуру?}
     H2 -->|правки| CURR
     H2 -->|принято| SP[Send API: параллельно по модулям]
 
@@ -20,7 +26,7 @@ flowchart TD
     SP --> SM[Seminar Designer<br/>задачи, кейсы, рубрики, эталоны]
     SP --> LC[Lecture Planner<br/>тайминг, тезисы, примеры, заметки]
 
-    AS --> VIS[Visual Agent<br/>слайды PPTX + Mermaid схемы]
+    AS --> VIS[Visual Agent<br/>слайды PPTX + схемы]
     SM --> VIS
     LC --> VIS
 

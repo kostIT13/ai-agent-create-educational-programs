@@ -1,0 +1,24 @@
+%% ============================================================
+%% Диаграмма 11: Observability — MLflow (Этап 10)
+%% ============================================================
+flowchart LR
+    subgraph RUNTIME["Эксперимент course-runtime"]
+        LG[LangGraph invoke] --> TR[Трейс: дерево спанов<br/>по узлам и LLM-вызовам]
+        TR --> TOK[Токены и стоимость]
+        TR --> EV[События: node, status, payload]
+    end
+
+    subgraph EVALS["Эксперимент course-evals"]
+        BR[Эталонные брифы] --> EVL[mlflow.genai.evaluate]
+        EVL --> SC1[Programmatic scorers<br/>валидаторы из validators/]
+        EVL --> SC2[LLM-судья по рубрикам]
+        EVL --> SC3[recall@k, faithfulness,<br/>валидность source_refs]
+    end
+
+    subgraph REG["Prompt Registry"]
+        P1[prompt v1] --> P2[prompt v2]
+        P2 --> P3[продвижение в prod]
+    end
+
+    TR --> DB[(PostgreSQL<br/>events.mlflow_trace_id)]
+    DB --> FE[Frontend: клик по узлу → трейс]

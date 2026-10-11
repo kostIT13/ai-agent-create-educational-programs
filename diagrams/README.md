@@ -7,15 +7,31 @@
 
 | Файл | Что показывает |
 |---|---|
-| [`architecture.mmd`](architecture.mmd) | High-level архитектура: frontend, backend, LangGraph, LLM-роутер, БД |
-| [`pipeline.mmd`](pipeline.mmd) | Мультиагентный пайплайн LangGraph: агенты, interrupt-чекпоинты, Critic-цикл |
-| [`rag.mmd`](rag.mmd) | RAG-контур: ingest (Docling → Qdrant) → hybrid search → rerank → верификация |
+| [`architecture.mmd`](architecture.mmd) | High-level архитектура: frontend, backend, сервисный слой, LangGraph, LLM-клиент, MLflow, MCP |
+| [`pipeline.mmd`](pipeline.mmd) | Мультиагентный пайплайн: сделанный линейный срез (intake → competency → curriculum → validate) + план (Send, Critic, чекпоинты) |
+| [`rag.mmd`](rag.mmd) | RAG-контур: ingest (Docling → Qdrant) → hybrid search → rerank → верификация (подробно: [`rag_plan.md`](../workflows/rag_plan.md)) |
 | [`db-schema.mmd`](db-schema.mmd) | ER-схема PostgreSQL: users, courses, versions, jobs, events, references, feedback, usage |
 | [`course-graph.mmd`](course-graph.mmd) | Доменная модель: компетенция → результат обучения → модуль → артефакты (constructive alignment) |
-| [`llm-router.mmd`](llm-router.mmd) | Иерархия моделей (LiteLLM): сильная/дешёвая/reasoning + fallback и ретраи |
-| [`job-states.mmd`](job-states.mmd) | State machine джоба: draft → running → waiting_input → ready/failed |
-| [`deployment.mmd`](deployment.mmd) | Docker Compose деплой + CI-конвейер GitHub Actions |
-| [`data-flow.mmd`](data-flow.mmd) | Sequence-диаграмма полного потока: бриф → чекпоинты → генерация → ZIP |
+| [`llm-router.mmd`](llm-router.mmd) | LLM-клиент: иерархия моделей, structured output, fallback; LiteLLM — план |
+| [`job-states.mmd`](job-states.mmd) | State machine курса и джобы (актуальные enum'ы) |
+| [`deployment.mmd`](deployment.mmd) | Docker Compose деплой (postgres, qdrant, mlflow, mmdc) + CI |
+| [`data-flow.mmd`](data-flow.mmd) | Sequence-диаграмма: бриф → сервисный слой → worker → SSE → версия курса |
+| [`mcp.mmd`](mcp.mmd) | MCP-интеграция: сервер (FastMCP) + клиенты (langchain-mcp-adapters) |
+| [`observability.mmd`](observability.mmd) | Observability: MLflow (трейсы, стоимость, evals, Prompt Registry) |
+| [`diagram-engines.mmd`](diagram-engines.mmd) | Выбор движка диаграмм: Mermaid / D2 / Graphviz + кэш рендеров |
+| [`rag.d2`](rag.d2) | **Тест D2** (не Mermaid): RAG-контур с лучшим контролем раскладки |
+
+## D2 (тест)
+
+[`rag.d2`](rag.d2) — экспериментальная диаграмма на D2. Рендер:
+
+```bash
+# установка: https://d2lang.com
+d2 --layout dagre diagrams/rag.d2 diagrams/rag.svg
+```
+
+D2 даёт лучший контроль над раскладкой и выглядит «из коробки»; рассматриваем его как опцию
+Visual Agent для архитектурных схем (см. [`diagram-engines.mmd`](diagram-engines.mmd)).
 
 ## Как рендерить
 
@@ -38,7 +54,8 @@ npx @mermaid-js/mermaid-cli -i diagrams/architecture.mmd -o diagrams/architectur
 
 Либо добавить скрипт `render:diagrams` в package.json, который пройдётся по всем `.mmd`.
 
-## Интеграция с plan.md
+## Интеграция с планами
 
-Ключевые диаграммы продублированы прямо в [`plan.md`](../plan.md) (§4 Архитектура, §8 RAG, §17 Демо).
-Здесь лежат их расширенные версии + дополнительные схемы (БД, модель данных, состояния, деплой).
+- [`plan.md`](../workflows/plan.md) — концепция, архитектура, RAG, демо.
+- [`next-steps.md`](../workflows/next-steps.md) — рабочий план по этапам (актуальный).
+- [`rag_plan.md`](../workflows/rag_plan.md) — подробный план RAG-контура.

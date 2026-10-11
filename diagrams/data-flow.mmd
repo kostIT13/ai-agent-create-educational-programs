@@ -1,48 +1,33 @@
 %% ============================================================
-%% Диаграмма 9: Поток данных — от брифа до ZIP-пакета
+%% Диаграмма 9: Поток данных — от брифа до готового курса
 %% ============================================================
 sequenceDiagram
     autonumber
     participant U as Пользователь
     participant FE as Frontend (React)
     participant API as FastAPI
+    participant SVC as Сервисный слой
+    participant WK as Worker (pipeline/worker.py)
     participant LG as LangGraph
-    participant RAG as Qdrant
-    participant LLM as LLM Router
-    participant PKG as Packager
+    participant LLM as LLMClient
+    participant MLF as MLflow
 
     U->>FE: бриф + референсы (PDF/URL)
-    FE->>API: POST /courses
-    API->>LG: run pipeline (background)
-    LG->>RAG: ingest: Docling в чанки, hybrid index
-    LG->>LLM: Intake: структурировать бриф
-    LLM-->>LG: Brief (Pydantic)
-    LG->>LLM: Competency Architect
-    LLM-->>LG: компетенции + outcomes
-    LG-->>API: interrupt 1 (ждём методиста)
-    API-->>FE: SSE: событие node=competency, status=waiting
-    FE-->>U: чекпоинт: правим компетенции
-    U->>FE: «принять»
-    FE->>API: POST /checkpoint
-    API->>LG: resume
-    LG->>LLM: Curriculum Architect
-    LLM-->>LG: модули, часы, пререквизиты
-    LG-->>API: interrupt 2
-    U->>FE: «принять структуру»
-    FE->>API: POST /checkpoint
-    API->>LG: resume
-    par Параллельно по модулям (Send)
-        LG->>LLM: Assessment Designer
-        LG->>LLM: Seminar Designer
-        LG->>LLM: Lecture Planner
+    FE->>API: POST /courses {brief_json: {raw_brief}}
+    API->>SVC: PipelineService.create_run()
+    SVC-->>API: job_id (202)
+    API-->>FE: JobRead
+    API->>WK: background: run_job(job_id, course_id, raw_brief)
+    WK->>LG: graph.astream(updates)
+    loop по узлам: intake → competency → curriculum → validate
+        LG->>LLM: structured output (Pydantic)
+        LLM-->>LG: Brief / CompetencyPlan / ModulePlan
+        LG-->>WK: update узла
+        WK-->>API: Event (node, status, payload) + progress
+        API-->>FE: SSE: /events/job/{id}/stream
+        WK->>MLF: autolog: трейс + токены + стоимость
     end
-    LLM-->>LG: вопросы, семинары, лекции (с source_refs)
-    LG->>LLM: Visual Agent (JSON структур слайдов)
-    LLM-->>LG: слайды + Mermaid схемы
-    LG->>LLM: Critic / QA (валидаторы + judge)
-    LLM-->>LG: отчёт с замечаниями, при необходимости возврат на доработку
-    LG->>PKG: готовый граф курса
-    PKG->>PKG: PPTX + DOCX + Moodle XML + JSON
-    PKG-->>API: ZIP-архив
-    API-->>FE: событие done + ссылка на ZIP
-    FE-->>U: пакет курса готов
+    WK->>SVC: версия в course_versions + курс ready
+    SVC-->>API: job completed
+    API-->>FE: SSE: event done
+    FE-->>U: граф курса готов

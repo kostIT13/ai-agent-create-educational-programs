@@ -1,30 +1,32 @@
 %% ============================================================
-%% Диаграмма 3: RAG-контур
+%% Диаграмма 3: RAG-контур (подробно: workflows/rag_plan.md)
 %% ============================================================
 flowchart LR
-    subgraph INGEST["Ingest"]
+    subgraph INGEST["Ingest (один раз на курс)"]
         F1[PDF] --> DOC[Docling: структура документа]
         F2[DOCX] --> DOC
         F3[PPTX] --> DOC
         F4[URL] --> DOC
         DOC --> CH[Чанкинг по структуре<br/>секции, таблицы, листы]
-        CH --> EMB[bge-m3<br/>dense + sparse эмбеддинги]
+        CH --> META[Метаданные чанка<br/>file, section, page, source_type, date]
+        META --> EMB[bge-m3<br/>dense + sparse эмбеддинги]
         EMB --> QD[("Qdrant<br/>collection: course_{id}_refs")]
     end
 
-    subgraph QUERY["Query"]
-        Q[Запрос агента<br/>+ фильтр по модулю/теме] --> HYB[Hybrid search<br/>dense + sparse, RRF]
+    subgraph QUERY["Search (каждый запрос агента)"]
+        Q[Запрос агента<br/>по своей задаче] --> HYB[Hybrid search<br/>dense + sparse, RRF]
         HYB --> R1[top-30 кандидатов]
         R1 --> RE[bge-reranker-v2-m3]
         RE --> R2[top-6 чанков]
         R2 --> CTX[Контекст в промпте<br/>в тегах source]
         CTX --> AG[Агент]
-        AG --> REFS[source_refs<br/>ссылки на id чанков]
+        AG --> REFS[source_refs<br/>course_{id}_refs:{chunk_id}]
     end
 
-    subgraph VERIFY["Verify"]
-        REFS --> CR[Critic: утверждения следуют<br/>из указанных чанков]
-        CR --> FAITH[RAGAS groundedness<br/>+ LLM-judge]
+    subgraph VERIFY["Verify (Critic)"]
+        REFS --> CR1[Утверждения следуют<br/>из указанных чанков]
+        REFS --> CR2[chunk_exists: id валиден<br/>детерминированно, без LLM]
+        CR1 --> FAITH[Faithfulness<br/>LLM-judge / RAGAS]
     end
 
     QD -.->|payload: text + metadata| CTX

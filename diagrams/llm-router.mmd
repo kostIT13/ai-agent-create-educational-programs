@@ -1,23 +1,24 @@
 %% ============================================================
-%% Диаграмма 6: LLM-роутер (LiteLLM) — иерархия моделей и fallback
+%% Диаграмма 6: LLM-клиент — иерархия моделей и fallback
+%% Сейчас: свой LLMClient (llm/client.py); LiteLLM — план (Этап 11)
 %% ============================================================
 flowchart TD
-    AG[Агент] --> T{Тип задачи}
+    AG[Агент] --> SO[LLMClient.structured<br/>Pydantic-схема + валидация]
 
-    T -->|Архитектура, компетенции, Critic| M1[Сильная модель<br/>Claude Sonnet 4.x / GPT-4o-class]
-    T -->|Лекции, семинары, вопросы| M2[Дешёвая модель<br/>Claude Haiku / GPT-4o-mini / Qwen2.5]
+    SO --> T{Тип задачи}
+    T -->|Архитектура, компетенции, Critic| M1[Сильная модель<br/>Claude Sonnet / GPT-4o-class]
+    T -->|Лекции, семинары, вопросы| M2[Дешёвая модель<br/>GPT-4o-mini / Qwen2.5]
     T -->|Эмбеддинги| M3[bge-m3 локально<br/>+ sparse fastembed]
-    T -->|Фактчек, сложная логика| M4[Reasoning<br/>o1 / o3-class]
 
     M1 --> F1{Успех?}
-    M1 --> F2{Rate limit?}
-    F1 -->|нет| FB[Fallback: OpenRouter → локальная Ollama]
-    F2 -->|429| W[Backoff + ретраи<br/>Tenacity, семафор concurrency]
-    FB --> OK
+    F1 -->|нет| FB[Fallback: резервная модель<br/>из LLM_FALLBACK_MODEL]
     F1 -->|да| OK
+    FB --> OK
 
-    M2 --> F3{Успех?}
-    F3 -->|нет| FB
-    F3 -->|да| OK
+    M2 --> F2{Успех?}
+    F2 -->|нет| FB
+    F2 -->|да| OK
 
-    OK[Ответ + usage tokens → Langfuse<br/>учёт стоимости в usage_log]
+    OK[Ответ + usage tokens<br/>→ MLflow autolog + usage_log]
+
+    GW[План: LiteLLM-шлюз<br/>fallback-цепочки, учёт стоимости,<br/>единая точка autolog] -.-> SO

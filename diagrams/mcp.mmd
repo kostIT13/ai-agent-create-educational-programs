@@ -1,0 +1,30 @@
+%% ============================================================
+%% Диаграмма 10: MCP-интеграция (Этап 9)
+%% A: наша система как MCP-сервер; B: агенты как MCP-клиенты
+%% ============================================================
+flowchart LR
+    subgraph CORE["Ядро (не зависит от MCP)"]
+        SVC[Сервисный слой<br/>PipelineService, CourseService, JobService]
+        LG[LangGraph-пайплайн]
+        PG[(PostgreSQL)]
+        QD[(Qdrant)]
+    end
+
+    subgraph A["A. MCP-сервер (FastMCP)"]
+        MCP[mcp_server/<br/>create_course, get_job_status,<br/>get_course, edit_competencies,<br/>regenerate_module, export_course]
+        CD[Claude Desktop / Cursor]
+    end
+
+    subgraph B["B. MCP-клиенты (langchain-mcp-adapters)"]
+        RA[Reference Analyst<br/>веб-поиск стандартов]
+        EXT[Внешние MCP-серверы<br/>ESCO, DigComp, GitHub]
+    end
+
+    CD -->|"запустил → опрашивай"| MCP
+    MCP --> SVC
+    SVC --> LG
+    LG --> PG
+    LG --> QD
+
+    RA -->|tools| EXT
+    RA -.->|контекст в source| LG

@@ -1,6 +1,6 @@
 %% ============================================================
 %% Диаграмма 4: Схема БД (PostgreSQL)
-%% Чанки референсов хранятся в Qdrant, в Postgres — метаданные
+%% Чанки референсов — в Qdrant, в Postgres — метаданные
 %% ============================================================
 erDiagram
     users ||--o{ courses : "создаёт"
@@ -9,11 +9,12 @@ erDiagram
     courses ||--o{ references : "загружает"
     courses ||--o{ feedback : "собирает отзывы"
     courses ||--o{ usage_log : "учитывает расход"
+    jobs ||--o{ events : "порождает события"
 
     users {
         uuid id PK
         text email UK
-        text role "admin | methodist"
+        text role "admin | methodist | viewer"
         timestamp created_at
     }
 
@@ -21,8 +22,8 @@ erDiagram
         uuid id PK
         uuid created_by FK
         text title
-        jsonb brief_json "входной бриф"
-        text status "draft | running | waiting_input | ready | failed"
+        jsonb brief_json "raw_brief + структурированный Brief"
+        text status "draft | processing | ready | failed | archived"
         int version
         timestamp created_at
         timestamp updated_at
@@ -33,15 +34,16 @@ erDiagram
         uuid course_id FK
         int version
         jsonb graph_json "полный граф курса"
-        text diff_summary
+        jsonb diff_json "план: diff между версиями"
+        int schema_version "план: версия схемы CourseGraph"
         timestamp created_at
     }
 
     jobs {
         uuid id PK
         uuid course_id FK
-        text status "pending | running | waiting_interrupt | done | failed"
-        numeric progress "0..1"
+        text status "queued | running | completed | failed | cancelled"
+        int progress "0..100"
         text error
         timestamp started_at
         timestamp finished_at
@@ -50,9 +52,10 @@ erDiagram
     events {
         uuid id PK
         uuid job_id FK
-        text node "имя агента"
-        text status "started | finished | error"
-        jsonb payload "частичные артефакты, token_usage"
+        text node "имя узла графа"
+        text status "started | running | completed | failed | interrupted"
+        jsonb payload "артефакты узла"
+        text mlflow_trace_id "план: связка с трейсом MLflow"
         timestamp ts
     }
 
@@ -63,7 +66,7 @@ erDiagram
         text mime
         text s3_key
         text qdrant_collection "course_{id}_refs"
-        timestamp uploaded_at
+        timestamp created_at
     }
 
     feedback {
@@ -79,10 +82,9 @@ erDiagram
     usage_log {
         uuid id PK
         uuid course_id FK
-        uuid job_id FK
         text model
         int tokens_in
         int tokens_out
-        numeric cost_usd
+        numeric cost
         timestamp ts
     }

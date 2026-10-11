@@ -1,9 +1,10 @@
 %% ============================================================
 %% ИИ-агент для создания образовательных программ
-%% Диаграмма 1: High-level архитектура
+%% Диаграмма 1: High-level архитектура (актуальная)
 %% ============================================================
 flowchart LR
     U[Пользователь / Методист] -->|бриф, референсы| FE
+    U -->|"Claude Desktop / Cursor"| MCP[MCP-сервер<br/>FastMCP]
 
     subgraph FE["Frontend (Vite + React + TS)"]
         BF[Форма брифа + drag&drop]
@@ -16,24 +17,28 @@ flowchart LR
     FE <-->|"SSE: поток событий пайплайна"| API
 
     subgraph BE["Backend (FastAPI)"]
-        API[Routers + Auth]
-        BG[BackgroundTasks]
+        API[Routers — тонкие адаптеры]
+        SVC[Сервисный слой<br/>PipelineService, CourseService, JobService]
+        BG[BackgroundTasks → worker]
         WS[LangGraph Workflow]
     end
 
+    MCP --> SVC
+    API --> SVC
+    SVC --> BG
     BG --> WS
-    WS --> AG["Агенты: Intake / RefAnalyst / Competency / Curriculum / Assessment / Seminar / Lecture / Visual / Critic / Packager"]
+    WS --> AG["Агенты (agent/):<br/>Intake / Competency / Curriculum /<br/>Assessment / Seminar / Lecture / Visual / Critic"]
+    AG --> VAL[Валидаторы (validators/)<br/>детерминированные проверки]
 
-    AG --> LLM["LLM Router (LiteLLM)"]
+    AG --> LLM["LLMClient (llm/)<br/>structured output + fallback"]
     LLM --> P1[OpenAI GPT]
     LLM --> P2[Anthropic Claude]
     LLM --> P3[OpenRouter]
     LLM --> P4[Локальная: Ollama Qwen]
 
-    AG --> PG[(PostgreSQL<br/>граф курса, версии, джобы)]
+    AG --> PG[(PostgreSQL<br/>граф курса, версии, джобы, события)]
     AG --> QD[(Qdrant<br/>чанки референсов, hybrid)]
-    AG --> RD[(Redis<br/>кэш, прогресс, rate limit)]
-    AG --> LF[Langfuse<br/>трейсы, evals, стоимость]
+    AG --> MLF[MLflow<br/>трейсы, стоимость, evals, Prompt Registry]
 
     WS --> EXP[Экспортеры: PPTX / DOCX / Moodle XML / Mermaid]
     EXP --> ZIP[ZIP-пакет курса]

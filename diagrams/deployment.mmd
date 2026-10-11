@@ -2,26 +2,20 @@
 %% Диаграмма 8: Деплой (docker-compose) — локальная dev-среда
 %% ============================================================
 flowchart TB
-    U[Пользователь] --> NG[Nginx :80<br/>static + proxy]
+    U[Пользователь] --> API[api :8000<br/>FastAPI + uvicorn]
 
     subgraph DOCKER["docker compose up"]
-        NG --> API[api :8000<br/>FastAPI + uvicorn]
-        API --> LG[langgraph-worker<br/>тот же образ, фоновый процесс]
-        API --> PG[(postgres :5432<br/>+ pgvector image)]
-        API --> QD[(qdrant :6333)]
-        API --> RD[(redis :6379)]
+        API --> PG[(postgres :5432<br/>данные + backend store MLflow)]
+        API --> QD[(qdrant :6333<br/>чанки референсов)]
+        API --> MLF[mlflow :5000<br/>backend store в Postgres,<br/>артефакты в volume]
         API --> MMDC[mmdc<br/>Mermaid CLI контейнер]
-        API --> LFU[langfuse :3000<br/>opcional, для трейсинга]
     end
 
-    LG --> PG
-    LG --> QD
-    LG --> RD
-    LG --> LLM[Внешние API:<br/>OpenAI / Anthropic / OpenRouter]
+    API --> LLM[Внешние API:<br/>OpenAI / Anthropic / OpenRouter]
 
     subgraph CI["GitHub Actions (CI)"]
         direction LR
         LINT[lint + typecheck] --> TEST[pytest unit]
         TEST --> SMOKE[smoke: мини-бриф через пайплайн]
-        SMOKE --> EVAL[evals: RAGAS + Promptfoo]
+        SMOKE --> EVAL[evals: MLflow<br/>recall@k + валидность source_refs<br/>+ регрессионный гейт]
     end
