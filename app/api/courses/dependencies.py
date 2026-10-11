@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 from database.db_connect.db import get_db
 from services.courses.service import CourseService
+from services.pipeline_service import PipelineService
 
 
 async def get_course_service(session: AsyncSession = Depends(get_db)):
@@ -10,3 +11,10 @@ async def get_course_service(session: AsyncSession = Depends(get_db)):
 
 
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
+
+
+async def get_pipeline_service(session: AsyncSession = Depends(get_db)):
+    return PipelineService(session)
+
+
+PipelineServiceDependency = Annotated[PipelineService, Depends(get_pipeline_service)]
