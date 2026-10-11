@@ -17,5 +17,5 @@ flowchart TB
         direction LR
         LINT[lint + typecheck] --> TEST[pytest unit]
         TEST --> SMOKE[smoke: мини-бриф через пайплайн]
-        SMOKE --> EVAL[evals: MLflow<br/>recall@k + валидность source_refs<br/>+ регрессионный гейт]
+        SMOKE --> EVAL["evals: MLflow<br/>recall@k + валидность source_refs<br/>+ регрессионный гейт"]
     end

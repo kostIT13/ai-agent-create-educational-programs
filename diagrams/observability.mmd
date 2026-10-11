@@ -12,7 +12,7 @@ flowchart LR
         BR[Эталонные брифы] --> EVL[mlflow.genai.evaluate]
         EVL --> SC1[Programmatic scorers<br/>валидаторы из validators/]
         EVL --> SC2[LLM-судья по рубрикам]
-        EVL --> SC3[recall@k, faithfulness,<br/>валидность source_refs]
+        EVL --> SC3["recall@k, faithfulness,<br/>валидность source_refs"]
     end
 
     subgraph REG["Prompt Registry"]
