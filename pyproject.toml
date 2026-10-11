@@ -10,6 +10,7 @@ dependencies = [
     "email-validator>=2.3.0",
     "fastapi>=0.142.2",
     "langchain-openai>=1.7.0",
+    "langgraph>=1.2.14",
     "loguru>=0.7.3",
     "psycopg>=3.3.6",
     "psycopg-binary>=3.3.6",

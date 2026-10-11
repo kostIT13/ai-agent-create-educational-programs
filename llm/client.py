@@ -1,7 +1,11 @@
 from collections.abc import AsyncIterator
+
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from loguru import logger
+from pydantic import BaseModel
+
 from core.configs.llm_config import llm_settings
 from llm.schemas import ChatMessage, LLMResponse, to_chat_messages
 
@@ -70,17 +74,19 @@ class LLMClient:
             overrides["max_tokens"] = max_tokens
 
         try:
-            return await self._invoke(self._primary, lc_messages, overrides)
+            target = self._primary if model is None else self._build(model)
+            return await self._invoke(target, lc_messages, overrides)
         except Exception as exc:
             if self._fallback is None:
                 raise
             logger.warning(
                 "Primary LLM model '{}' failed ({}), falling back to '{}'",
-                self._primary_model,
+                self._primary_model if model is None else model,
                 exc,
-                self._fallback_model,
+                self._fallback_model if model is None else model,
             )
-            return await self._invoke(self._fallback, lc_messages, overrides)
+            fallback = self._fallback if model is None else self._build(model)
+            return await self._invoke(fallback, lc_messages, overrides)
 
     async def chat_text(
         self,
@@ -108,15 +114,7 @@ class LLMClient:
 
         target = self._primary
         if model:
-            target = ChatOpenAI(
-                model=model,
-                base_url=llm_settings.BASE_URL,
-                api_key=llm_settings.API_KEY or "EMPTY",
-                temperature=temperature if temperature is not None else llm_settings.TEMPERATURE,
-                max_tokens=max_tokens if max_tokens is not None else llm_settings.MAX_TOKENS,
-                timeout=llm_settings.TIMEOUT_SECONDS,
-                max_retries=llm_settings.MAX_RETRIES,
-            )
+            target = self._build(model, temperature=temperature, max_tokens=max_tokens)
 
         overrides = {}
         if temperature is not None:
@@ -129,6 +127,59 @@ class LLMClient:
         async for chunk in target.astream(lc_messages):
             if isinstance(chunk, AIMessageChunk) and chunk.content:
                 yield str(chunk.content)
+
+    def structured(
+        self,
+        schema: type[BaseModel],
+        *,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        **kwargs: object,
+    ) -> Runnable:
+        """Runnable со structured output (Pydantic-схема) и fallback на резервную модель.
+
+        Пример::
+            runnable = llm.structured(Brief)
+            brief = await runnable.ainvoke([("system", sys), ("user", text)])
+        """
+        overrides: dict[str, object] = {}
+        if temperature is not None:
+            overrides["temperature"] = temperature
+        if max_tokens is not None:
+            overrides["max_tokens"] = max_tokens
+
+        primary = self._primary if model is None else self._build(model)
+        if overrides:
+            primary = primary.bind(**overrides)
+        runnable = primary.with_structured_output(schema, **kwargs)
+
+        if self._fallback:
+            fallback = self._fallback if model is None else self._build(model)
+            if overrides:
+                fallback = fallback.bind(**overrides)
+            runnable = runnable.with_fallbacks(
+                [fallback.with_structured_output(schema, **kwargs)]
+            )
+        return runnable
+
+    def _build(
+        self,
+        model: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> ChatOpenAI:
+        """Клиент для конкретной модели (для выборочного вызова модели/фолбэка)."""
+        return ChatOpenAI(
+            model=model,
+            base_url=llm_settings.BASE_URL,
+            api_key=llm_settings.API_KEY or "EMPTY",
+            temperature=temperature if temperature is not None else llm_settings.TEMPERATURE,
+            max_tokens=max_tokens if max_tokens is not None else llm_settings.MAX_TOKENS,
+            timeout=llm_settings.TIMEOUT_SECONDS,
+            max_retries=llm_settings.MAX_RETRIES,
+        )
 
     async def _invoke(
         self,

@@ -17,43 +17,46 @@
 
 ---
 
-## Этап 1. Ядро: Pydantic-схемы графа курса
+## Этап 1. Ядро: Pydantic-схемы графа курса (сделано)
 
 **Цель:** единый источник правды — структурированный JSON-граф курса (по §7.1 [`plan.md`](plan.md)).
 
-Новый пакет `core/models/` (или `app/schemas/course_graph.py`):
-
-| Файл | Содержимое |
-|---|---|
-| `brief.py` | `Brief`: тема, цель, аудитория, объём (часы), язык, требования, референсы |
-| `competency.py` | `Competency` (id, name, level), `Outcome` (id, competency_id, bloom, text, source_refs) |
-| `module.py` | `Module` (id, title, hours{lec,sem,self}, outcomes, prereq) |
-| `assessment.py` | `Question` (id, module_id, outcome_id, qtype, prompt, options, correct, difficulty, explanation, source_refs) |
-| `seminar.py` | `Seminar` (id, module_id, tasks, rubric) |
-| `lecture.py` | `Lecture` (id, module_id, outline, timing, speaker_notes) |
-| `course.py` | `CourseGraph` (competencies, outcomes, modules, questions, seminars, lectures) + `CourseState` (TypedDict для LangGraph) |
-
-**Критерий готовности:** схемы валидируются на мок-примере; `CourseGraph` сериализуется в JSON и обратно.
+- [x] `core/models/brief.py` — `Brief` (тема, цель, аудитория, объём, язык, требования,
+      ограничения, референсы) + `Hours` (lec/sem/self, `total`).
+- [x] `core/models/competency.py` — `BloomLevel` (6 уровней), `Competency`, `Outcome`.
+- [x] `core/models/module.py` — `Module` (hours, outcomes, prereq).
+- [x] `core/models/assessment.py` — `QuestionType`, `Question` (difficulty 0..1).
+- [x] `core/models/seminar.py` — `Task`, `Seminar` (rubric).
+- [x] `core/models/lecture.py` — `SlideBlock`, `TimingStep`, `Lecture`.
+- [x] `core/models/course.py` — `CourseGraph` (с хелперами), `CriticIssue`/`CriticReport`,
+      `CourseState` (TypedDict для LangGraph).
+- [x] Тесты [`tests/test_course_graph.py`](../tests/test_course_graph.py) — 7 шт., JSON round-trip.
+- [x] dev-группа `pytest`/`pytest-asyncio`, `uv.lock` обновлён.
 
 ---
 
-## Этап 2. Первый вертикальный срез: Intake → Competency → Curriculum
+## Этап 2. Первый вертикальный срез: Intake → Competency → Curriculum (сделано)
 
 **Цель:** «бриф → структура курса» через LangGraph с LLM-клиентом (без RAG).
 
-1. Добавить зависимости: `langgraph`, `instructor` (structured output), `tenacity` (retry).
-2. `core/graph/state.py` — `CourseState` (TypedDict): brief, competencies, outcomes, modules, critic_report.
-3. `core/agents/` — промпты + узлы:
-   - `intake.py` — парсинг сырого брифа в `Brief` (structured output, 1 ретрай при невалидном JSON);
-   - `competency.py` — `Competency` + `Outcome` (глаголы Блума);
-   - `curriculum.py` — `Module` (часы, пререквизиты, привязка к outcomes).
-4. `core/graph/workflow.py` — граф `intake → competency → curriculum` + валидаторы:
-   - сумма часов == объёму брифа;
-   - каждый outcome привязан к компетенции; каждый модуль — к outcomes;
-   - нет циклов в пререквизитах.
-5. `core/validators/` — детерминированные проверки (переиспользуются Critic'ом позже).
+> Структура: всё, что связано с агентами и пайплайном — в корне (`agent/`, `pipeline/`,
+> `validators/`), не в `core/`. В `core/` только модели, конфиги, логгер.
 
-**Критерий готовности:** скрипт/тест прогоняет бриф «Промпт-инжиниринг для PM, 24 ч» → валидный `CourseGraph` с компетенциями и модулями.
+- [x] Зависимость `langgraph` добавлена; structured output — через `LLMClient.structured()` с fallback.
+- [x] `llm/client.py` — метод `structured(schema)` (with_structured_output + fallback), фикс `chat(model=...)`.
+- [x] `agent/base.py` — `generate_structured()`; промпты в `agent/prompts/` (версионируются).
+- [x] `agent/intake.py` — сырой бриф → `Brief`.
+- [x] `agent/competency.py` — `Competency` + `Outcome` (глаголы Блума).
+- [x] `agent/curriculum.py` — `Module` (часы, пререквизиты, привязка к outcomes).
+- [x] `validators/course.py` — детерминированные проверки: сумма часов, связность
+      outcomes/компетенций, отсутствие циклов в пререквизитах.
+- [x] `pipeline/workflow.py` — граф `intake → competency → curriculum → validate`;
+      `pipeline/runner.py` — `run_pipeline()` → `CourseGraph` или `PipelineError`.
+- [x] Offline-тесты (фейковый LLM): [`tests/test_pipeline_offline.py`](../tests/test_pipeline_offline.py),
+      [`tests/test_validators.py`](../tests/test_validators.py) — 19 тестов суммарно.
+
+**Критерий готовности:** offline-прогон брифа → валидный `CourseGraph`; реальный прогон — на машине
+с настроенным `LLM_API_KEY` (команда `uv run python -c "..."` / следующий этап).
 
 ---
 
@@ -92,11 +95,11 @@
 
 **Цель:** полный пакет курса (по §5 [`plan.md`](plan.md)).
 
-1. `assessment.py` — вопросы (MCQ, верно/неверно, соответствие, open) с дистракторами и пояснениями.
-2. `seminar.py` — задания, рубрики, эталонные решения.
-3. `lecture.py` — план лекции: тайминг, тезисы, примеры, заметки лектора.
-4. `visual.py` — JSON-структуры слайдов + Mermaid-схемы.
-5. `critic.py` — детерминированные проверки (из Этапа 2) + LLM-judge; до 2 итераций доработки.
+1. `agent/assessment.py` — вопросы (MCQ, верно/неверно, соответствие, open) с дистракторами и пояснениями.
+2. `agent/seminar.py` — задания, рубрики, эталонные решения.
+3. `agent/lecture.py` — план лекции: тайминг, тезисы, примеры, заметки лектора.
+4. `agent/visual.py` — JSON-структуры слайдов + Mermaid-схемы.
+5. `agent/critic.py` — детерминированные проверки (из Этапа 2) + LLM-judge; до 2 итераций доработки.
 6. Параллелизм по модулям через `Send` API LangGraph.
 
 **Критерий готовности:** полный прогон брифа → `CourseGraph` со всеми артефактами + отчёт Critic.
@@ -142,8 +145,6 @@
 
 ## Порядок выполнения (ближайшие шаги)
 
-1. **Этап 0**: проверить `docker compose up --build`, добавить `logs/` в `.gitignore`.
-2. **Этап 1**: схемы графа курса (фундамент — без него ничего дальше).
-3. **Этап 2**: Intake → Competency → Curriculum на LangGraph.
-4. **Этап 3**: `POST /run` + worker + SSE.
-5. Далее по списку.
+1. **Этап 2 ✓** — вертикальный срез «бриф → структура курса» готов (агенты + валидаторы + граф + тесты).
+2. **Этап 3** — `POST /run` + worker + SSE: связать пайплайн с API и БД.
+3. Далее по списку.
