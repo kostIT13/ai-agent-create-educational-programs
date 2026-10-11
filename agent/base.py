@@ -1,10 +1,6 @@
-"""Базовый вызов LLM со structured output (Pydantic-схема) + retry/fallback."""
-
 from typing import TypeVar
-
 from loguru import logger
 from pydantic import BaseModel
-
 from llm.client import LLMClient
 
 T = TypeVar("T", bound=BaseModel)

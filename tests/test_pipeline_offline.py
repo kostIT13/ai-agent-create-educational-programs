@@ -1,9 +1,5 @@
-"""Offline-тесты LangGraph-пайплайна с фейковым LLM (без реальных вызовов)."""
-
 from typing import Any
-
 import pytest
-
 from agent.competency import CompetencyPlan
 from agent.curriculum import ModulePlan
 from core.models import BloomLevel, Brief, Competency, Hours, Module, Outcome

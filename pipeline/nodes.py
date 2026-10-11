@@ -1,9 +1,5 @@
-"""Узлы LangGraph-графа: intake -> competency -> curriculum -> validate."""
-
 from typing import Any
-
 from llm.client import LLMClient
-
 from agent.competency import competency_agent
 from agent.curriculum import curriculum_agent
 from agent.intake import intake_agent

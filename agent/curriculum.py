@@ -1,12 +1,7 @@
-"""Агент Curriculum Architect: бриф + outcomes -> модули курса."""
-
 import json
-
 from pydantic import BaseModel, Field
-
 from core.models import Brief, Module, Outcome
 from llm.client import LLMClient
-
 from agent.base import generate_structured
 from agent.prompts.curriculum import (
     CURRICULUM_PROMPT_VERSION,

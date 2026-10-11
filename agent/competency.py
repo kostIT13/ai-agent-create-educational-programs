@@ -1,10 +1,6 @@
-"""Агент Competency Architect: бриф -> компетенции и результаты обучения."""
-
 from pydantic import BaseModel, Field
-
 from core.models import Brief, Competency, Outcome
 from llm.client import LLMClient
-
 from agent.base import generate_structured
 from agent.prompts.competency import (
     COMPETENCY_PROMPT_VERSION,

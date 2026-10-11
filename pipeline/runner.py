@@ -1,7 +1,4 @@
-"""Запуск пайплайна: сырой бриф -> CourseGraph (компетенции + модули)."""
-
 from loguru import logger
-
 from core.models import CourseGraph
 from llm.client import LLMClient, get_llm_client
 from pipeline.workflow import build_workflow

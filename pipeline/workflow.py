@@ -1,7 +1,4 @@
-"""Сборка LangGraph-графа: intake -> competency -> curriculum -> validate."""
-
 from langgraph.graph import END, START, StateGraph
-
 from core.models import CourseState
 from llm.client import LLMClient
 from pipeline.nodes import make_nodes

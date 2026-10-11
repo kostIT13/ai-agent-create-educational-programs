@@ -1,8 +1,3 @@
-"""Детерминированные проверки графа курса (по §12.1 плана).
-
-Используются на этапе Curriculum и позже — Critic'ом.
-"""
-
 from core.models import Brief, Competency, Module, Outcome
 
 

@@ -1,8 +1,5 @@
-"""Тесты Pydantic-схем графа курса (Этап 1)."""
-
 import pytest
 from pydantic import ValidationError
-
 from core.models import (
     BloomLevel,
     Brief,

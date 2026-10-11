@@ -1,5 +1,3 @@
-"""Тесты детерминированных проверок графа курса (Этап 2)."""
-
 from core.models import BloomLevel, Brief, Competency, Hours, Module, Outcome
 from validators.course import (
     check_hours_total,
