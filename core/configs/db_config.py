@@ -10,11 +10,11 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     DEBUG: str = "release"
 
-    POSTGRES_URL: str
-    POSTGRES_DB: str
-    POSTGRES_HOST: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_USER: str
+    POSTGRES_URL: str = "postgresql+asyncpg://User:Pass@localhost:5432/postgres"
+    POSTGRES_DB: str = "postgres"
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PASSWORD: str = "Pass"
+    POSTGRES_USER: str = "User"
     POSTGRES_PORT: int = 5432
 
 

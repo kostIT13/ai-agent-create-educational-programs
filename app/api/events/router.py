@@ -1,12 +1,16 @@
+import asyncio
 import uuid
 from datetime import datetime
 from typing import Annotated
 from database.db_connect.db import get_db
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from database.models.jobs import JobStatus
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.events.schemas import EventCreate, EventRead
-from services.events.service import EventService
 from app.api.events.dependencies import EventServiceDependency
+from app.api.jobs.dependencies import JobServiceDependency
+from services.events.service import EventService
 
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -28,6 +32,44 @@ async def list_job_events(
 ):
     """История событий джоба (для поллинга/SSE можно передавать since)."""
     return await service.list_by_job(job_id, since=since, limit=limit)
+
+
+@router.get("/job/{job_id}/stream")
+async def stream_job_events(
+    job_id: uuid.UUID,
+    request: Request,
+    service: EventServiceDependency,
+    job_service: JobServiceDependency,
+):
+    """SSE-лента событий джоба для live-графа агентов.
+
+    Отдаёт события по мере появления; завершается событием `done`, когда джоба
+    перешла в терминальный статус (completed/failed/cancelled).
+    """
+
+    async def event_generator():
+        last_ts: datetime | None = None
+        while True:
+            if await request.is_disconnected():
+                break
+            events = await service.list_by_job(job_id, since=last_ts, limit=100)
+            for event in events:
+                last_ts = event.ts
+                yield f"data: {EventRead.model_validate(event).model_dump_json()}\n\n"
+            job = await job_service.get(job_id)
+            if job is None:
+                yield 'event: error\ndata: {"detail": "job not found"}\n\n'
+                break
+            if (
+                job.status
+                in (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED)
+                and not events
+            ):
+                yield "event: done\ndata: {}\n\n"
+                break
+            await asyncio.sleep(1)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.get("/{event_id}", response_model=EventRead)

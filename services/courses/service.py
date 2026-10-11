@@ -8,7 +8,7 @@ from services.courses.repository import CourseRepository
 STATUS_TRANSITIONS: dict[CourseStatus, set[CourseStatus]] = {
     CourseStatus.DRAFT: {CourseStatus.PROCESSING, CourseStatus.ARCHIVED},
     CourseStatus.PROCESSING: {CourseStatus.READY, CourseStatus.FAILED, CourseStatus.ARCHIVED},
-    CourseStatus.READY: {CourseStatus.ARCHIVED},
+    CourseStatus.READY: {CourseStatus.PROCESSING, CourseStatus.ARCHIVED},
     CourseStatus.FAILED: {CourseStatus.PROCESSING, CourseStatus.ARCHIVED},
     CourseStatus.ARCHIVED: set(),
 }

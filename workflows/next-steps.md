@@ -60,18 +60,21 @@
 
 ---
 
-## Этап 3. Запуск пайплайна через API + worker
+## Этап 3. Запуск пайплайна через API + worker (сделано)
 
 **Цель:** джоба реально исполняет граф, пишет события и прогресс.
 
-1. `POST /api/v1/courses/{id}/run` — создаёт джобу (если нет активной) и запускает граф в фоне
-   (`BackgroundTasks` или отдельный worker-процесс).
-2. Worker: `job.start()` → прогон графа → на каждом узле пишет `Event` (node, status, payload)
-   и обновляет `progress` → `job.complete()` / `job.fail()`; курс → `ready` / `failed`.
-3. Результат графа сохраняется в `course_versions` (graph_json) + `courses.brief_json`.
-4. `GET /api/v1/courses/{id}/events` (SSE) — стрим событий для фронта (сейчас есть только поллинг).
+- [x] `POST /courses/{id}/run` — создаёт джобу (409 при активной) и запускает `run_job` в фоне
+      (`BackgroundTasks`); 400, если в `brief_json` нет `raw_brief`.
+- [x] `pipeline/worker.py` — `run_job()`: `job.start()` → курс `processing` → прогон графа через
+      `graph.astream(stream_mode="updates")` → на каждом узле `Event` + `progress` (25/50/75/100)
+      → версия в `course_versions` + `brief_json` → курс `ready` / `failed`.
+- [x] `GET /events/job/{job_id}/stream` — SSE-лента событий (завершается событием `done`).
+- [x] Разрешён повторный запуск: `ready` → `processing` в `STATUS_TRANSITIONS`.
+- [x] Тесты эндпоинта: 404 / 400 / 202 (worker вызван с верными аргументами) / 409.
 
-**Критерий готовности:** `POST /run` → SSE-лента с событиями узлов → курс в статусе `ready` с графом в БД.
+**Критерий готовности:** `POST /run` → SSE-лента с событиями узлов → курс `ready` с графом в БД
+(проверяется на живом стеке: `docker compose up` + `LLM_API_KEY`).
 
 ---
 

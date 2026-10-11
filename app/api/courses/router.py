@@ -2,7 +2,7 @@ import uuid
 from typing import Annotated
 from database.db_connect.db import get_db
 from database.models.courses import Course, CourseStatus
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.courses.schemas import (
     CourseCreate,
@@ -12,6 +12,9 @@ from app.api.courses.schemas import (
     CourseUpdate,
 )
 from app.api.courses.dependencies import CourseServiceDependency
+from app.api.jobs.dependencies import JobServiceDependency
+from app.api.jobs.schemas import JobRead
+from pipeline.worker import run_job
 
 
 router = APIRouter(prefix="/courses", tags=["courses"])
@@ -74,6 +77,34 @@ async def change_course_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+
+@router.post("/{course_id}/run", response_model=JobRead, status_code=status.HTTP_202_ACCEPTED)
+async def run_course_pipeline(
+    course_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    course_service: CourseServiceDependency,
+    job_service: JobServiceDependency,
+):
+    """Запустить пайплайн генерации курса в фоне.
+
+    Ожидается, что в brief_json курса лежит поле raw_brief с текстом брифа.
+    """
+    course = await course_service.get(course_id)
+    if course is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Курс не найден")
+    raw_brief = (course.brief_json or {}).get("raw_brief")
+    if not raw_brief:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="В brief_json курса нет поля raw_brief с текстом брифа",
+        )
+    try:
+        job = await job_service.create(course_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    background_tasks.add_task(run_job, job.id, course_id, raw_brief)
+    return job
 
 
 @router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
