@@ -1,13 +1,8 @@
-"""Модули курса: структура, часы, пререквизиты."""
-
 from pydantic import BaseModel, Field
-
 from core.models.brief import Hours
 
 
 class Module(BaseModel):
-    """Модуль курса."""
-
     id: str = Field(..., pattern=r"^M\d+$", description="Идентификатор, напр. M2")
     title: str = Field(..., min_length=1)
     summary: str = Field(default="")

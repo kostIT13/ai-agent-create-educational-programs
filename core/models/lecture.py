@@ -1,5 +1,3 @@
-"""Планы лекций и структуры слайдов."""
-
 from pydantic import BaseModel, Field
 
 

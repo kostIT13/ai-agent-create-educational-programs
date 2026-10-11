@@ -1,5 +1,3 @@
-"""Входные данные: бриф пользователя (по §3.1 плана)."""
-
 from pydantic import BaseModel, Field
 
 

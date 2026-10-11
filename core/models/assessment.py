@@ -1,7 +1,4 @@
-"""Банк тестовых вопросов."""
-
 import enum
-
 from pydantic import BaseModel, Field
 
 

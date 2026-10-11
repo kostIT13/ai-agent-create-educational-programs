@@ -1,5 +1,3 @@
-"""Семинары и практические задания."""
-
 from pydantic import BaseModel, Field
 
 

@@ -1,7 +1,4 @@
-"""Компетенции и результаты обучения (таксономия Блума)."""
-
 import enum
-
 from pydantic import BaseModel, Field
 
 

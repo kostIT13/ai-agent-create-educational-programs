@@ -1,9 +1,5 @@
-"""Граф курса — единый источник правды (по §7.1 плана)."""
-
 from typing import Literal, TypedDict
-
 from pydantic import BaseModel, Field
-
 from core.models.assessment import Question
 from core.models.brief import Brief
 from core.models.competency import Competency, Outcome
