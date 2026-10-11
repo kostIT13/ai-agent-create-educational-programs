@@ -41,6 +41,10 @@ alembic/versions/__pycache__/
 .coverage
 htmlcov/
 
+# Logs (монтируются в контейнер через volume)
+logs/
+*.log
+
 # Documentation / misc
 diagrams/
 workflows/
