@@ -1,5 +1,3 @@
-"""Схемы RAG-контура: чанки, результаты поиска и ингеста."""
-
 from pydantic import BaseModel, Field
 
 
@@ -18,11 +16,6 @@ class Chunk(BaseModel):
 
 
 class RetrievedChunk(BaseModel):
-    """Чанк, возвращённый поиском.
-
-    chunk_id — полный id в формате `course_{course_id}_refs:{chunk_id}`,
-    тот же id попадает в `source_refs` моделей курса.
-    """
 
     chunk_id: str
     text: str

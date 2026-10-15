@@ -1,21 +1,9 @@
-"""Ingest: файл/URL → markdown → структурные чанки.
-
-- PDF/DOCX/PPTX — Docling (структурированный markdown: заголовки, таблицы, списки);
-- MD/TXT — читаем как есть;
-- URL — скачиваем через httpx и обрабатываем по Content-Type.
-
-Docling импортируется лениво: если пакет не установлен, для бинарных форматов
-возвращается понятная ошибка (текстовые форматы работают без Docling).
-"""
-
 import io
 import mimetypes
 import uuid
 from pathlib import Path
-
 import httpx
 from loguru import logger
-
 from core.configs.rag_config import rag_settings
 from rag.chunking import chunk_markdown
 from rag.schemas import Chunk, IngestResult

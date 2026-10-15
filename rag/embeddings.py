@@ -1,13 +1,5 @@
-"""Эмбеддинги для RAG.
-
-Фаза 1 (MVP): dense-векторы через OpenAI API (`text-embedding-3-large`).
-Поддерживается локальный OpenAI-совместимый endpoint (vLLM/Ollama/OpenWebUI)
-через `RAG_EMBEDDINGS_BASE_URL` — на хакатоне допустим fallback на API.
-"""
-
 from loguru import logger
 from openai import AsyncOpenAI
-
 from core.configs.rag_config import rag_settings
 
 

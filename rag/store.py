@@ -1,16 +1,8 @@
-"""Qdrant-хранилище референсов курса.
-
-Коллекция: `{prefix}_{course_id}_refs` — изоляция референсов разных курсов.
-Фаза 1 (MVP): dense-векторы, поиск по косинусной близости.
-"""
-
 import uuid
 from typing import Any
-
 from loguru import logger
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models as qm
-
 from core.configs.rag_config import rag_settings
 from rag.schemas import Chunk, RetrievedChunk
 

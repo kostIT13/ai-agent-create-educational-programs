@@ -1,18 +1,5 @@
-"""Retriever: поиск по коллекции референсов курса.
-
-Интерфейс для агентов (см. rag_plan.md §11):
-- `search(query, top_k)` — dense-поиск (Фаза 1);
-- `to_source_block(chunks)` — чанки → `<source id="...">...</source>`;
-- `chunk_exists(chunk_id)` — проверка валидности source_ref (для Critic).
-
-Если референсов нет (коллекция пуста/не создана) — search возвращает пустой
-список, агенты работают без контекста (режим «без референсов»).
-"""
-
 import uuid
-
 from loguru import logger
-
 from rag.embeddings import EmbeddingsClient, get_embeddings_client
 from rag.schemas import Chunk, RetrievedChunk
 from rag.store import QdrantStore, get_store
