@@ -12,6 +12,7 @@ from database.models.courses import CourseStatus
 from database.models.events import EventStatus
 from llm.client import get_llm_client
 from pipeline.workflow import build_workflow
+from rag.retriever import Retriever
 from services.course_versions.service import CourseVersionService
 from services.courses.service import CourseService
 from services.events.service import EventService
@@ -58,7 +59,10 @@ async def run_job(job_id: uuid.UUID, course_id: uuid.UUID, raw_brief: str) -> No
             return
 
         llm = get_llm_client()
-        graph = build_workflow(llm)
+        # RAG-контекст: если Qdrant недоступен или референсов нет — агенты
+        # работают без контекста (Retriever.search вернёт пустой список).
+        retriever = Retriever(course_id)
+        graph = build_workflow(llm, retriever=retriever)
         state: dict[str, Any] = {"raw_brief": raw_brief}
 
         try:

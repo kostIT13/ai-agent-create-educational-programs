@@ -10,6 +10,7 @@ from app.api import (
     usage_log,
     users,
 )
+from app.api.courses import refs as course_refs
 
 app = FastAPI(title="TS Hack API", version="0.1.0")
 
@@ -21,6 +22,7 @@ async def health() -> dict[str, str]:
 
 app.include_router(users.router)
 app.include_router(courses.router)
+app.include_router(course_refs.router)
 app.include_router(course_versions.router)
 app.include_router(jobs.router)
 app.include_router(events.router)

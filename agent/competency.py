@@ -17,12 +17,21 @@ class CompetencyPlan(BaseModel):
     outcomes: list[Outcome] = Field(default_factory=list)
 
 
-async def competency_agent(llm: LLMClient, brief: Brief) -> CompetencyPlan:
-    """Построить карту компетенций и результатов обучения по брифу."""
+async def competency_agent(
+    llm: LLMClient,
+    brief: Brief,
+    *,
+    context: str = "",
+) -> CompetencyPlan:
+    """Построить карту компетенций и результатов обучения по брифу.
+
+    `context` — чанки референсов в `<source>`-обёртке (опционально).
+    """
     return await generate_structured(
         llm,
         CompetencyPlan,
         COMPETENCY_SYSTEM_PROMPT,
         brief.model_dump_json(indent=2, ensure_ascii=False),
+        context=context,
         temperature=0.3,
     )

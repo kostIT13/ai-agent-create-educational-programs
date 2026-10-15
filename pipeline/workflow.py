@@ -2,11 +2,16 @@ from langgraph.graph import END, START, StateGraph
 from core.models import CourseState
 from llm.client import LLMClient
 from pipeline.nodes import make_nodes
+from rag.retriever import Retriever
 
 
-def build_workflow(llm: LLMClient):
-    """Скомпилированный граф пайплайна (линейный на этом этапе)."""
-    nodes = make_nodes(llm)
+def build_workflow(llm: LLMClient, retriever: Retriever | None = None):
+    """Скомпилированный граф пайплайна (линейный на этом этапе).
+
+    `retriever` — опциональный RAG-контекст референсов курса; если None,
+    агенты работают без референсов.
+    """
+    nodes = make_nodes(llm, retriever=retriever)
     builder = StateGraph(CourseState)
 
     builder.add_node("intake", nodes["intake"])

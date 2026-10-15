@@ -21,8 +21,13 @@ async def curriculum_agent(
     llm: LLMClient,
     brief: Brief,
     outcomes: list[Outcome],
+    *,
+    context: str = "",
 ) -> list[Module]:
-    """Построить модули курса по брифу и результатам обучения."""
+    """Построить модули курса по брифу и результатам обучения.
+
+    `context` — чанки референсов в `<source>`-обёртке (опционально).
+    """
     payload = {
         "brief": brief.model_dump(),
         "outcomes": [o.model_dump() for o in outcomes],
@@ -33,6 +38,7 @@ async def curriculum_agent(
         ModulePlan,
         CURRICULUM_SYSTEM_PROMPT,
         user_content,
+        context=context,
         temperature=0.2,
     )
     return plan.modules
