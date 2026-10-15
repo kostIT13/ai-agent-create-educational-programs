@@ -17,6 +17,16 @@ services:
       timeout: 5s
       retries: 10
 
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: ts_hack_qdrant
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+      - "${QDRANT_DASHBOARD_PORT:-6334}:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
   api:
     build:
       context: .
@@ -27,7 +37,6 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      # БД: внутри сети docker-compose хост = имя сервиса "postgres"
       POSTGRES_URL: postgresql+asyncpg://${POSTGRES_USER:-User}:${POSTGRES_PASSWORD:-Pass}@postgres:5432/${POSTGRES_DB:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       POSTGRES_HOST: postgres
@@ -46,6 +55,16 @@ services:
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-60}
       LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-3}
       LLM_RETRY_BACKOFF_SECONDS: ${LLM_RETRY_BACKOFF_SECONDS:-2}
+      # RAG
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      RAG_EMBEDDINGS_PROVIDER: ${RAG_EMBEDDINGS_PROVIDER:-openai}
+      RAG_EMBEDDINGS_MODEL: ${RAG_EMBEDDINGS_MODEL:-text-embedding-3-large}
+      RAG_EMBEDDINGS_BASE_URL: ${RAG_EMBEDDINGS_BASE_URL:-}
+      RAG_EMBEDDINGS_API_KEY: ${RAG_EMBEDDINGS_API_KEY:-}
+      RAG_EMBEDDINGS_DIM: ${RAG_EMBEDDINGS_DIM:-1024}
+      RAG_TOP_K: ${RAG_TOP_K:-6}
+      RAG_MAX_FILE_SIZE_MB: ${RAG_MAX_FILE_SIZE_MB:-20}
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
@@ -56,3 +75,4 @@ services:
 
 volumes:
   postgres_data:
+  qdrant_data:
