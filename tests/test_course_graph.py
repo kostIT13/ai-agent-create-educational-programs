@@ -5,7 +5,6 @@ from core.models import (
     Brief,
     Competency,
     CourseGraph,
-    Hours,
     Lecture,
     Module,
     Outcome,
@@ -14,8 +13,12 @@ from core.models import (
     Seminar,
     SlideBlock,
     Task,
+    Template,
+    TemplateChoice,
+    TemplateType,
     TimingStep,
 )
+from core.models.template import build_template
 
 
 def make_brief() -> Brief:
@@ -24,11 +27,19 @@ def make_brief() -> Brief:
         goal="Научить PM проектировать и оценивать промпты",
         audience="Продакт-менеджеры",
         entry_level="Базовое понимание ИИ",
-        hours=Hours(lec=12, sem=8, self=4),
+        total_hours=24,
+        study_form="очно-заочная",
+        final_assessment="защита проекта",
         language="ru",
         requirements=["Практика на реальных кейсах"],
         constraints=["Без математики"],
         references=["https://example.com/prompt-guide"],
+    )
+
+
+def make_template() -> Template:
+    return build_template(
+        TemplateChoice(template_type=TemplateType.GENERAL, rationale="интенсив")
     )
 
 
@@ -46,7 +57,7 @@ def make_graph() -> CourseGraph:
     m1 = Module(
         id="M1",
         title="Основы промптов",
-        hours=Hours(lec=4, sem=2, self=1),
+        hours={"lec": 4, "sem": 2, "sr": 1},
         outcomes=["LO1"],
     )
     q1 = Question(
@@ -74,6 +85,7 @@ def make_graph() -> CourseGraph:
     )
     return CourseGraph(
         brief=brief,
+        template=make_template(),
         competencies=[c1],
         outcomes=[lo1],
         modules=[m1],
@@ -85,14 +97,17 @@ def make_graph() -> CourseGraph:
 
 def test_brief_defaults() -> None:
     brief = Brief(topic="T")
-    assert brief.hours.total == 0
+    assert brief.total_hours == 0
+    assert brief.template_hint == "auto"
+    assert brief.missing == []
     assert brief.language == "ru"
     assert brief.requirements == []
     assert brief.constraints == []
 
 
-def test_hours_total() -> None:
-    assert Hours(lec=12, sem=8, self=4).total == 24
+def test_module_total_hours_by_kinds() -> None:
+    m = Module(id="M1", title="M", hours={"lk": 6, "pr": 4, "lb": 0, "srs": 8, "ia": 2})
+    assert m.total_hours == 20
 
 
 def test_graph_roundtrip_json() -> None:
@@ -105,6 +120,8 @@ def test_graph_roundtrip_json() -> None:
 def test_graph_helpers() -> None:
     graph = make_graph()
     assert graph.total_hours() == 7
+    assert graph.template is not None
+    assert graph.template.template_type is TemplateType.GENERAL
     assert graph.module_by_id("M1") is not None
     assert graph.module_by_id("M9") is None
     assert graph.outcome_by_id("LO1") is not None
@@ -132,4 +149,4 @@ def test_difficulty_range() -> None:
 
 def test_negative_hours_rejected() -> None:
     with pytest.raises(ValidationError):
-        Hours(lec=-1)
+        Module(id="M1", title="M", hours={"lec": -1})

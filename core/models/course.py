@@ -6,6 +6,7 @@ from core.models.competency import Competency, Outcome
 from core.models.lecture import Lecture
 from core.models.module import Module
 from core.models.seminar import Seminar
+from core.models.template import Template
 
 
 class CriticIssue(BaseModel):
@@ -29,6 +30,9 @@ class CourseGraph(BaseModel):
     """Полный граф курса: компетенции → результаты → модули → артефакты."""
 
     brief: Brief
+    template: Template | None = Field(
+        default=None, description="Выбранный шаблон АЦР (dpo / general)"
+    )
     competencies: list[Competency] = Field(default_factory=list)
     outcomes: list[Outcome] = Field(default_factory=list)
     modules: list[Module] = Field(default_factory=list)
@@ -39,7 +43,7 @@ class CourseGraph(BaseModel):
 
     def total_hours(self) -> int:
         """Суммарный объём всех модулей в часах."""
-        return sum(m.hours.total for m in self.modules)
+        return sum(m.total_hours for m in self.modules)
 
     def module_by_id(self, module_id: str) -> Module | None:
         return next((m for m in self.modules if m.id == module_id), None)
@@ -59,6 +63,7 @@ class CourseState(TypedDict, total=False):
 
     brief: Brief
     raw_brief: str | None
+    template: Template
     competencies: list[Competency]
     outcomes: list[Outcome]
     modules: list[Module]

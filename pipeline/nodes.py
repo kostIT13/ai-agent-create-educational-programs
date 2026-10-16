@@ -5,6 +5,7 @@ from loguru import logger
 from agent.competency import competency_agent
 from agent.curriculum import curriculum_agent
 from agent.intake import intake_agent
+from agent.template_selector import template_selector_agent
 from core.models import CourseState
 from llm.client import LLMClient
 from rag.retriever import Retriever
@@ -33,12 +34,24 @@ def make_nodes(
         brief = await intake_agent(llm, raw)
         return {"brief": brief}
 
+    async def template_selector_node(state: CourseState) -> dict[str, Any]:
+        brief = state["brief"]
+        # Быстрый вызов без RAG: нормативка шаблона закреплена кодом в build_template.
+        template = await template_selector_agent(llm, brief)
+        logger.debug(
+            "TemplateSelector: type={} rationale={}",
+            template.template_type.value,
+            template.rationale,
+        )
+        return {"template": template}
+
     async def competency_node(state: CourseState) -> dict[str, Any]:
         brief = state["brief"]
+        template = state["template"]
         context = await _context(
             f"Требования к выпускнику и компетенции по теме: {brief.topic}"
         )
-        plan = await competency_agent(llm, brief, context=context)
+        plan = await competency_agent(llm, brief, template, context=context)
         logger.debug(
             "Competency: competencies={} outcomes={} refs={}",
             len(plan.competencies),
@@ -49,11 +62,12 @@ def make_nodes(
 
     async def curriculum_node(state: CourseState) -> dict[str, Any]:
         brief = state["brief"]
+        template = state["template"]
         context = await _context(
             f"Структура и часы учебной программы по теме: {brief.topic}"
         )
         modules = await curriculum_agent(
-            llm, brief, state["outcomes"], context=context
+            llm, brief, state["outcomes"], template, context=context
         )
         logger.debug(
             "Curriculum: modules={} refs={}",
@@ -68,11 +82,13 @@ def make_nodes(
             state["competencies"],
             state["outcomes"],
             state["modules"],
+            state.get("template"),
         )
         return {"errors": problems}
 
     return {
         "intake": intake_node,
+        "template_selector": template_selector_node,
         "competency": competency_node,
         "curriculum": curriculum_node,
         "validate": validate_node,

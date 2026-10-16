@@ -23,6 +23,7 @@ async def run_pipeline(
 
     graph_result = CourseGraph(
         brief=state["brief"],
+        template=state.get("template"),
         competencies=state["competencies"],
         outcomes=state["outcomes"],
         modules=state["modules"],

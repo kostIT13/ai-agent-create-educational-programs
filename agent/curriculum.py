@@ -1,6 +1,6 @@
 import json
 from pydantic import BaseModel, Field
-from core.models import Brief, Module, Outcome
+from core.models import Brief, Module, Outcome, Template
 from llm.client import LLMClient
 from agent.base import generate_structured
 from agent.prompts.curriculum import (
@@ -21,15 +21,20 @@ async def curriculum_agent(
     llm: LLMClient,
     brief: Brief,
     outcomes: list[Outcome],
+    template: Template,
     *,
     context: str = "",
 ) -> list[Module]:
-    """Построить модули курса по брифу и результатам обучения.
+    """Построить модули курса с часами по видам работы шаблона.
 
     `context` — чанки референсов в `<source>`-обёртке (опционально).
     """
     payload = {
         "brief": brief.model_dump(),
+        "template": {
+            "template_type": template.template_type.value,
+            "hours_kinds": template.hours_kinds,
+        },
         "outcomes": [o.model_dump() for o in outcomes],
     }
     user_content = json.dumps(payload, ensure_ascii=False, indent=2)

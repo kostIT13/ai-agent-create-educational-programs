@@ -20,9 +20,10 @@ from services.jobs.service import JobService
 
 # Прогресс джобы по завершённым узлам графа
 NODE_PROGRESS: dict[str, int] = {
-    "intake": 25,
-    "competency": 50,
-    "curriculum": 75,
+    "intake": 20,
+    "template_selector": 40,
+    "competency": 60,
+    "curriculum": 80,
     "validate": 100,
 }
 
@@ -87,6 +88,7 @@ async def run_job(job_id: uuid.UUID, course_id: uuid.UUID, raw_brief: str) -> No
 
             graph_result = CourseGraph(
                 brief=state["brief"],
+                template=state.get("template"),
                 competencies=state["competencies"],
                 outcomes=state["outcomes"],
                 modules=state["modules"],
