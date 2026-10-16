@@ -1,20 +1,35 @@
-from core.models import Brief, Competency, Module, Outcome
+from core.models import Brief, Competency, Module, Outcome, Template
 
 
 def check_hours_total(brief: Brief, modules: list[Module]) -> list[str]:
-    """Сумма часов модулей должна совпадать с объёмом брифа (по каждому типу)."""
+    """Сумма всех часов модулей должна совпадать с объёмом брифа (гейт перед контентом)."""
     problems: list[str] = []
-    if brief.hours.total == 0:
+    if brief.total_hours == 0:
         return problems  # объём не задан в брифе — не проверяем
-    lec = sum(m.hours.lec for m in modules)
-    sem = sum(m.hours.sem for m in modules)
-    self_ = sum(m.hours.self for m in modules)
-    if lec != brief.hours.lec:
-        problems.append(f"Лекции: суммарно {lec} ч, в брифе {brief.hours.lec} ч")
-    if sem != brief.hours.sem:
-        problems.append(f"Семинары: суммарно {sem} ч, в брифе {brief.hours.sem} ч")
-    if self_ != brief.hours.self:
-        problems.append(f"Самост. работа: суммарно {self_} ч, в брифе {brief.hours.self} ч")
+    total = sum(m.total_hours for m in modules)
+    if total != brief.total_hours:
+        problems.append(
+            f"Итог часов: у модулей {total} ч, в брифе {brief.total_hours} ч"
+        )
+    return problems
+
+
+def check_hours_kinds(template: Template | None, modules: list[Module]) -> list[str]:
+    """Часы ведутся только по видам работы шаблона (ЛК/ПР/ЛБ/СРС/ИА или
+    лекции/практика/СР/ИА) — ловит аномалии вида «неизвестный вид часов»."""
+    if template is None:
+        return []
+    problems: list[str] = []
+    allowed = set(template.hours_kinds)
+    for m in modules:
+        unknown = sorted(set(m.hours) - allowed)
+        if unknown:
+            problems.append(
+                f"Модуль {m.id}: неизвестные виды часов {', '.join(unknown)} "
+                f"(шаблон допускает: {', '.join(sorted(allowed))})"
+            )
+        if m.total_hours == 0:
+            problems.append(f"Модуль {m.id}: нулевая трудоёмкость")
     return problems
 
 
@@ -78,10 +93,12 @@ def validate_course(
     competencies: list[Competency],
     outcomes: list[Outcome],
     modules: list[Module],
+    template: Template | None = None,
 ) -> list[str]:
     """Все проверки этапа Curriculum; возвращает список проблем (пустой = ок)."""
     problems: list[str] = []
     problems += check_hours_total(brief, modules)
+    problems += check_hours_kinds(template, modules)
     problems += check_outcomes_referenced(modules, outcomes, competencies)
     problems += check_prereq_cycles(modules)
     # дедупликация с сохранением порядка

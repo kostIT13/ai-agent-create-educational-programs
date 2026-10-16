@@ -1,6 +1,7 @@
 """Детерминированные проверки графа курса (переиспользуются Critic'ом позже)."""
 
 from validators.course import (
+    check_hours_kinds,
     check_hours_total,
     check_outcomes_referenced,
     check_prereq_cycles,
@@ -8,6 +9,7 @@ from validators.course import (
 )
 
 __all__ = [
+    "check_hours_kinds",
     "check_hours_total",
     "check_outcomes_referenced",
     "check_prereq_cycles",
