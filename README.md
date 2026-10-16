@@ -1,12 +1,19 @@
-# TS Hack — ИИ-агент для создания образовательных программ
+# TS Hack — ИИ-агент для создания образовательных программ АЦР
 
-Репозиторий для трека хакатона: агент по запросу пользователя проектирует программу обучения
-(компетенции, структуру, материалы курса) на основе брифа и референсов.
+Репозиторий для трека хакатона: агент по запросу методиста проектирует программу обучения АЦР
+(шаблон, компетенции, структуру, материалы курса) на основе брифа и референсов и собирает
+полный комплект: программа .docx по шаблону АЦР, слайды .pptx, тесты в LMS-формате, JSON.
 
-Ключевая идея — **мультиагентный конвейер вокруг единого графа курса**: `Brief → Competency →
-Outcome → Module → артефакты (лекции, семинары, тесты)`. Каждая сущность трассируется до
-компетенции и источника (`source_refs`), а все артефакты генерируются из одного графа —
-это обеспечивает согласованность и проверяемость.
+**Кейс:** заказчик — Академия цифрового развития (Магас), кейсодатель — GigaCowork (Сбер).
+**Два шаблона АЦР:** №1 ДПП ПК/стажировка (273-ФЗ + приказ Минобрнауки № 499, профстандарты,
+ЛК/ПР/ЛБ/СРС/ИА), №2 общеразвивающая (приказ Минпросвещения № 629, знания/умения/навыки,
+лекции/практика/СР/ИА). Примеры и ТЗ — в [`dataset/`](dataset/main_task.txt:1).
+
+Ключевая идея — **пайплайн навыков вокруг единого графа курса** (как на GigaCowork):
+`Intake → TemplateSelector → Competency → Outcome → Module → артефакты (лекции, семинары, тесты) → Critic`.
+Каждая сущность трассируется до компетенции и источника (`source_refs`), а все артефакты
+генерируются из одного графа — это обеспечивает согласованность, проверку сумм часов и
+достоверность (без выдуманных приказов/профстандартов).
 
 ## Статус (актуальный)
 
@@ -17,30 +24,38 @@ Outcome → Module → артефакты (лекции, семинары, те�
 | 2 | Агенты Intake → Competency → Curriculum + валидаторы + LangGraph-граф | ✅ |
 | 3 | `POST /courses/{id}/run` + worker (события, прогресс, версии) + SSE | ✅ |
 | 4 | RAG: Docling → Qdrant → `source_refs` | 🚧 в работе |
-| 5–11 | Остальные агенты, экспорт, фронт, evals, MCP, MLflow | ⏳ план |
+| 5 | **TemplateSelector (2 шаблона АЦР)**, чекпоинты утверждения, Assessment/Seminar/Lecture/Critic | ⏳ план |
+| 6 | Экспорт: **DOCX по шаблонам АЦР**, PPTX, LMS (GIFT/XML/CSV), JSON/ZIP | ⏳ план |
+| 7–11 | Фронт, evals по чек-листам ТЗ, MCP, MLflow, prod-практики | ⏳ план |
 
-Подробный план: [`workflows/next-steps.md`](workflows/next-steps.md:1), RAG: [`workflows/rag_plan.md`](workflows/rag_plan.md:1).
+Подробный план: [`workflows/plan.md`](workflows/plan.md:1) (актуализирован под данные хакатона),
+этапы: [`workflows/next-steps.md`](workflows/next-steps.md:1), RAG: [`workflows/rag_plan.md`](workflows/rag_plan.md:1).
 
 ## Стек
 
-Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy (async) · PostgreSQL · LangGraph · LangChain-OpenAI ·
-uv · Docker Compose. Evals/Observability: MLflow (план). LLM: свой клиент с structured output + fallback.
+Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy (async) · PostgreSQL · LangGraph · Qdrant · Docling ·
+uv · Docker Compose. **LLM: свой OpenAI-совместимый клиент с structured output + fallback** —
+сейчас на текущем dev-провайдере; по ТЗ целевой провайдер — **Cloud.ru EFM
+(GigaChat / Qwen / DeepSeek)**, подключим, когда выдадут доступы (смена `BASE_URL`/моделей в `.env`).
+Evals/Observability: MLflow (план).
 
 ## Структура репозитория
 
 ```text
-agent/            # агенты (Intake, Competency, Curriculum) + промпты в agent/prompts/
+agent/            # навыки (Intake, Competency, Curriculum + TemplateSelector) + промпты
 pipeline/         # LangGraph: узлы, workflow, runner, worker (фоновый прогон джобы)
 validators/       # детерминированные проверки курса (часы, связность, циклы)
-core/models/      # Pydantic-схемы графа курса (Brief, Competency, Outcome, Module, ...)
-core/configs/     # конфиги (БД, LLM)
-llm/              # LLMClient: chat/stream/structured + fallback
-rag/              # RAG-контур (реализуется в Этапе 4)
-services/         # сервисный слой: Course, Job, Event, CourseVersion, PipelineService
+core/models/      # Pydantic-схемы графа курса (Brief, Template, Competency, Module, ...)
+core/configs/     # конфиги (БД, LLM - Cloud.ru)
+llm/              # LLMClient: chat/stream/structured + fallback внутри каталога Cloud.ru
+rag/              # RAG-контур (Docling -> Qdrant -> source_refs)
+services/         # сервисный слой: Course, Job, Event, Version, PipelineService, Reference, Usage
 app/api/          # FastAPI-роутеры (тонкие адаптеры поверх сервисов)
 database/         # SQLAlchemy async-модели + Alembic-миграции
-tests/            # pytest (23 теста)
-workflows/        # планы: next-steps, rag_plan, plan, claude-plan, qwen-plan
+exporters/        # (план) DOCX по 2 шаблонам АЦР, PPTX, LMS GIFT/XML/CSV, JSON/ZIP
+dataset/          # ТЗ хакатона + 2 примера программ АЦР (эталоны шаблонов)
+tests/            # pytest
+workflows/        # планы: plan (v2 - данные хакатона), next-steps, rag_plan
 diagrams/         # Mermaid (.mmd) + тест D2 (.d2)
 ```
 
@@ -50,7 +65,8 @@ diagrams/         # Mermaid (.mmd) + тест D2 (.d2)
 
 ```bash
 # 1. Конфигурация
-cp .env.example .env          # вписать LLM_API_KEY
+cp .env.example .env          # вписать LLM_API_KEY для Cloud.ru EFM +
+                              # LLM_BASE_URL (GigaChat/Qwen/DeepSeek), при необходимости RAG_* / QDRANT_URL
 
 # 2. Запуск стека (postgres + api, миграции применяются автоматически)
 docker compose up --build

@@ -72,9 +72,10 @@ Docling превращает PDF/DOCX/PPTX в структурированный
 
 ### 3.3. Эмбеддинги
 
-- **bge-m3** (локально, RU-friendly): dense + sparse вектор на каждый чанк;
-- fallback: `text-embedding-3-large` (тогда sparse-часть делаем отдельно — fastembed/BM25);
-- на хакатоне допустим fallback на API-эмбеддинги, если нет GPU.
+- **локальные bge-m3** (RU-friendly): dense + sparse вектор на каждый чанк; не требует внешних API;
+- сейчас разрешён и **OpenAI-совместимый endpoint** из `.env` (`RAG_EMBEDDINGS_BASE_URL`) — это
+  dev-вариант; по ТЗ целевой провайдер — **Cloud.ru EFM**, подключим, когда выдадут доступы;
+- если нет GPU — sparse-часть делаем отдельно (fastembed/BM25, локально).
 
 ### 3.4. Хранилище: Qdrant
 
@@ -186,7 +187,8 @@ Docling превращает PDF/DOCX/PPTX в структурированный
 
 ### Фаза 1 — MVP (вертикальный срез)
 1. Docling → чанки по структуре;
-2. один тип эмбеддингов (bge-m3 dense или `text-embedding-3-large`);
+2. один тип эмбеддингов (**bge-m3 dense локально** или OpenAI-совместимый endpoint;
+   Cloud.ru EFM — когда будут доступы);
 3. Qdrant: dense-поиск → топ-6;
 4. `<source>`-обёртка в промпте + `source_refs` в моделях;
 5. evals на 3 брифах: recall@k + валидность ссылок.
@@ -288,7 +290,7 @@ rag/
 ├─ schemas.py        # RetrievedChunk, IngestResult
 ├─ ingest.py         # Docling: файл/URL -> markdown -> чанки с метаданными
 ├─ chunking.py       # чанкинг по структуре документа
-├─ embeddings.py     # bge-m3 (dense+sparse), fallback text-embedding-3-large
+├─ embeddings.py     # bge-m3 (dense+sparse), Cloud.ru EFM; зарубежные API запрещены
 ├─ store.py          # Qdrant: create_collection, upsert, delete_collection
 ├─ retriever.py      # search (dense -> hybrid -> rerank), to_source_block, chunk_exists
 └─ reranker.py       # bge-reranker-v2-m3 (Фаза 3)
@@ -300,7 +302,8 @@ rag/
 
 - добавить сервис `qdrant` (образ `qdrant/qdrant`, порт 6333, volume для данных);
 - env: `QDRANT_URL=http://qdrant:6333`;
-- эмбеддинги: локально (bge-m3) или API (`EMBEDDINGS_PROVIDER=openai|local`);
+- эмбеддинги: локально (bge-m3) или OpenAI-совместимый endpoint (`EMBEDDINGS_PROVIDER=api|local`);
+  Cloud.ru EFM — после выдачи доступов;
 - реранкер — локально (Фаза 3), при отсутствии GPU — отложить.
 
 ---
